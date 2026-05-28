@@ -1,5 +1,7 @@
 import Code from '../components/Code.jsx';
 
+const BASE = 'https://api.cronstream.xyz';
+
 function MethodBadge({ method }) {
   const colors = {
     GET:    'text-[#7FDED2] border-[#7FDED2]/30',
@@ -18,6 +20,16 @@ function AuthBadge({ type }) {
     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#C3B1E1]/10 text-[#C3B1E1] border border-[#C3B1E1]/20">
       API key
     </span>
+  );
+  if (type === 'apikey|x402') return (
+    <>
+      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#C3B1E1]/10 text-[#C3B1E1] border border-[#C3B1E1]/20">
+        API key
+      </span>
+      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#7FDED2]/10 text-[#7FDED2] border border-[#7FDED2]/20">
+        x402
+      </span>
+    </>
   );
   if (type === 'hmac') return (
     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#F28B82]/10 text-[#F28B82] border border-[#F28B82]/20">
@@ -50,31 +62,49 @@ export default function DeveloperApi() {
     <>
       <h1>Developer API</h1>
       <p>
-        The developer API gives registered companies programmatic control over their streams.
+        The developer API gives companies and AI agents programmatic control over their streams.
         It covers two use cases: <strong>company-initiated verification</strong> (your backend calls the agent)
         and <strong>autonomous operation</strong> (GitHub pushes events to the agent directly).
+      </p>
+      <p>
+        Base URL: <code>{BASE}</code>
       </p>
 
       <h2>Authentication</h2>
       <p>
-        Companies generate their own API key from the <strong>Settings {'>'} Developer</strong> tab inside the CronStream app.
-        The key is shown <strong>once</strong> at generation time in a copy prompt, it is never stored in plaintext and cannot be retrieved after the prompt is closed.
-        If you lose it, regenerate a new one (the old key is immediately invalidated).
+        Two authentication methods are supported on company endpoints:
       </p>
-      <p>Pass the key as a bearer token on every authenticated request:</p>
-      <Code language="bash">Authorization: Bearer cs_live_{'<your-key>'}</Code>
-      <p>Requests without a valid key return <code>401 Unauthorized</code>.</p>
+      <div className="my-3 rounded-lg border border-border overflow-hidden">
+        <table style={{ margin: 0 }}>
+          <thead><tr><th>Method</th><th>How</th><th>Who</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>API key</strong></td>
+              <td><code>Authorization: Bearer cs_live_{'<key>'}</code></td>
+              <td>Registered companies. Generated once in Settings {'>'} Developer. Shown once, cannot be retrieved.</td>
+            </tr>
+            <tr>
+              <td><strong>x402</strong></td>
+              <td><code>X-PAYMENT: {'<payment-proof>'}</code></td>
+              <td>AI agents and scripts without a registered account. Pay per call in USDC on Base.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Requests without a valid key or payment return <code>401 Unauthorized</code>.
+        Requests missing payment credentials on x402-gated endpoints return <code>402 Payment Required</code>
+        with full payment instructions in the response body.
+      </p>
 
-      {/* ── COMPANY ENDPOINTS (API KEY) ──────────────────────── */}
+      {/* ── COMPANY ENDPOINTS ────────────────────────────────── */}
       <h2>Company endpoints</h2>
-      <p>These require an API key. The key must belong to the company (sender) of the stream.</p>
 
-      {/* POST /api/v1/verify-milestone */}
       <Endpoint
         method="POST"
         path="/api/v1/verify-milestone"
-        auth="apikey"
-        description="Run milestone verification against the registered source and return a signed EIP-712 extension voucher. Your backend then submits the voucher on-chain to extend the stream window."
+        auth="apikey|x402"
+        description="Run milestone verification against the registered source and return a signed EIP-712 extension voucher. Your backend then submits the voucher on-chain to extend the stream window. x402 price: $0.10 per call."
       >
         <h3>Request body</h3>
         <Code language="json">{`
@@ -130,12 +160,11 @@ export default function DeveloperApi() {
         <Code language="json">{`{ "success": false, "error": "No qualifying PR found in the last 7 days", "failedLayer": "github" }`}</Code>
       </Endpoint>
 
-      {/* POST /api/v1/register-stream */}
       <Endpoint
         method="POST"
         path="/api/v1/register-stream"
-        auth="apikey"
-        description="Register a stream with the agent after the createStream transaction confirms on-chain. This tells the agent which source to watch and starts autonomous monitoring."
+        auth="apikey|x402"
+        description="Register a stream with the agent after the createStream transaction confirms on-chain. This tells the agent which source to watch and starts autonomous monitoring. x402 price: $0.05 per call."
       >
         <h3>Request body</h3>
         <Code language="json">{`
@@ -167,12 +196,11 @@ export default function DeveloperApi() {
         <Code language="json">{`{ "success": true, "streamId": "0x..." }`}</Code>
       </Endpoint>
 
-      {/* GET /api/v1/streams/pending */}
       <Endpoint
         method="GET"
         path="/api/v1/streams/pending"
         auth="apikey"
-        description="Returns all streams for an address that are expired on-chain and have unreclaimed funds or unpaid contractor balances. Use this to drive your reclaim dashboard."
+        description="Returns all streams for an address that are expired on-chain and have unreclaimed funds or unpaid contractor balances."
       >
         <h3>Query parameters</h3>
         <div className="my-3 rounded-lg border border-border overflow-hidden">
@@ -183,8 +211,8 @@ export default function DeveloperApi() {
             </tbody>
           </table>
         </div>
-        <Code language="bash">{`curl "/api/v1/streams/pending?address=0xWALLET" \\
-  -H "Authorization: Bearer <key>"`}</Code>
+        <Code language="bash">{`curl "${BASE}/api/v1/streams/pending?address=0xWALLET" \\
+  -H "Authorization: Bearer cs_live_<key>"`}</Code>
         <h3>Response</h3>
         <Code language="json">{`
 {
@@ -202,31 +230,21 @@ export default function DeveloperApi() {
   ]
 }
         `}</Code>
-        <div className="my-3 rounded-lg border border-border overflow-hidden">
-          <table style={{ margin: 0 }}>
-            <thead><tr><th>Field</th><th>Description</th></tr></thead>
-            <tbody>
-              <tr><td><code>reclaimable</code></td><td>Budget the company can recover via <code>reclaimUnearned()</code> on the contract</td></tr>
-              <tr><td><code>contractorOwed</code></td><td>Balance the contractor can still withdraw after expiry</td></tr>
-            </tbody>
-          </table>
-        </div>
       </Endpoint>
 
-      {/* DELETE /api/v1/stream/:streamId */}
       <Endpoint
         method="DELETE"
         path="/api/v1/stream/:streamId"
         auth="apikey"
         description="Remove a stream from the agent registry and stop monitoring it. Only the stream sender can call this. Does not affect on-chain state."
       >
-        <Code language="bash">{`curl -X DELETE /api/v1/stream/0xSTREAM_ID \\
-  -H "Authorization: Bearer <key>"`}</Code>
+        <Code language="bash">{`curl -X DELETE ${BASE}/api/v1/stream/0xSTREAM_ID \\
+  -H "Authorization: Bearer cs_live_<key>"`}</Code>
         <Code language="json">{`{ "success": true, "streamId": "0x...", "message": "Stream removed from agent registry" }`}</Code>
         <p>Returns <code>403</code> if the caller is not the stream sender.</p>
       </Endpoint>
 
-      {/* ── GITHUB WEBHOOK (AUTONOMOUS MODE) ─────────────────── */}
+      {/* ── GITHUB WEBHOOK ───────────────────────────────────── */}
       <h2>GitHub webhook (autonomous mode)</h2>
       <p>
         For fully autonomous operation, point your GitHub repo webhook at this endpoint.
@@ -245,7 +263,7 @@ export default function DeveloperApi() {
           <table style={{ margin: 0 }}>
             <thead><tr><th>Setting</th><th>Value</th></tr></thead>
             <tbody>
-              <tr><td>Payload URL</td><td><code>{'{YOUR_AGENT_HOST}'}/api/v1/webhook/github</code></td></tr>
+              <tr><td>Payload URL</td><td><code>{BASE}/api/v1/webhook/github</code></td></tr>
               <tr><td>Content type</td><td><code>application/json</code></td></tr>
               <tr><td>Secret</td><td>Must match <code>GITHUB_WEBHOOK_SECRET</code> in agent config</td></tr>
               <tr><td>Events</td><td>Pull requests, Workflow runs</td></tr>
@@ -253,9 +271,7 @@ export default function DeveloperApi() {
           </table>
         </div>
         <h3>PR description convention</h3>
-        <p>
-          Add these lines to the PR body so the agent knows which stream to extend:
-        </p>
+        <p>Add these lines to the PR body so the agent knows which stream to extend:</p>
         <Code language="markdown">{`
 CronStream-Stream-Id: 0x<64 hex chars>
 CronStream-Nonce: <current on-chain nonce>
@@ -267,17 +283,17 @@ CronStream-Nonce: <current on-chain nonce>
         </p>
       </Endpoint>
 
-      {/* ── OPEN V1 ENDPOINTS ────────────────────────────────── */}
+      {/* ── OPEN ENDPOINTS ───────────────────────────────────── */}
       <h2>Open endpoints</h2>
-      <p>These require no authentication. They are used by the CronStream frontend and are available to any client.</p>
+      <p>These require no authentication and are available to any client.</p>
 
       <Endpoint
         method="GET"
         path="/api/v1/streams"
         auth="open"
-        description="All streams for a wallet address, enriched with live on-chain data. Results are cached for 30 seconds."
+        description="All streams for a wallet address, enriched with live on-chain data."
       >
-        <Code language="bash">curl "/api/v1/streams?address=0xWALLET"</Code>
+        <Code language="bash">{`curl "${BASE}/api/v1/streams?address=0xWALLET"`}</Code>
         <Code language="json">{`
 {
   "address": "0x...",
@@ -303,17 +319,17 @@ CronStream-Nonce: <current on-chain nonce>
         auth="open"
         description="Live on-chain withdrawable balance for a stream."
       >
+        <Code language="bash">{`curl "${BASE}/api/v1/stream/0xSTREAM_ID/balance"`}</Code>
         <Code language="json">{`
 {
-  "streamId":        "0x...",
-  "chainId":         421614,
-  "balance":         "125000000",
-  "earnedSnapshot":  "375000000",
-  "ratePerSecond":   "1157407407407",
-  "streamValidUntil":"1748000000",
-  "totalDeposited":  "2000000000",
-  "totalWithdrawn":  "500000000",
-  "isActive":        true
+  "streamId":         "0x...",
+  "chainId":          421614,
+  "balance":          "125000000",
+  "ratePerSecond":    "1157407407407",
+  "streamValidUntil": "1748000000",
+  "totalDeposited":   "2000000000",
+  "totalWithdrawn":   "500000000",
+  "isActive":         true
 }
         `}</Code>
       </Endpoint>
@@ -324,31 +340,33 @@ CronStream-Nonce: <current on-chain nonce>
         auth="open"
         description="Agent-side metadata for a stream including the full extension history."
       >
+        <Code language="bash">{`curl "${BASE}/api/v1/stream-status/0xSTREAM_ID"`}</Code>
         <Code language="json">{`
 {
   "streamId":   "0x...",
   "stream":     { ... },
   "extensions": [
     {
-      "stream_id":        "0x...",
-      "nonce":            3,
-      "extended_until":   "1748000000",
+      "stream_id":           "0x...",
+      "nonce":               3,
+      "extended_until":      "1748000000",
       "verification_source": "github",
-      "created_at":       1747900000
+      "created_at":          1747900000
     }
   ]
 }
         `}</Code>
       </Endpoint>
 
-      {/* ── Error codes ──────────────────────────────────────── */}
+      {/* ── ERROR CODES ──────────────────────────────────────── */}
       <h2>Error codes</h2>
       <div className="my-4 rounded-lg border border-border overflow-hidden">
         <table style={{ margin: 0 }}>
           <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
           <tbody>
             <tr><td><code>400</code></td><td>Invalid stream ID, address, or missing required fields</td></tr>
-            <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
+            <tr><td><code>401</code></td><td>Missing or invalid API key or JWT</td></tr>
+            <tr><td><code>402</code></td><td>x402 payment required — response body contains payment instructions</td></tr>
             <tr><td><code>403</code></td><td>Caller is not the stream sender</td></tr>
             <tr><td><code>404</code></td><td>Stream not found in registry or on-chain</td></tr>
             <tr><td><code>409</code></td><td>Stream already registered</td></tr>

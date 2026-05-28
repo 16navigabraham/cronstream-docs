@@ -53,7 +53,7 @@ export default function ApiReference() {
           <tbody>
             <tr>
               <td><code>x402</code></td>
-              <td>Pay USDC per request — see the <a href="#x402">x402 page</a> for the full flow. No account needed.</td>
+              <td>Pay USDC per request, see the <a href="#x402">x402 page</a> for the full flow. No account needed.</td>
             </tr>
             <tr>
               <td><code>API key</code></td>
@@ -85,7 +85,7 @@ export default function ApiReference() {
 }
       `}</Code>
 
-      <Endpoint method="GET" path="/api/public/stream/:id" auth="x402" description="Full stream state — registry metadata and live on-chain data combined." />
+      <Endpoint method="GET" path="/api/public/stream/:id" auth="x402" description="Full stream state, registry metadata and live on-chain data combined." />
       <Code language="bash">{`curl {BASE_URL}/api/public/stream/0xSTREAM_ID \\
   -H "X-PAYMENT: <proof>"`}</Code>
       <Code language="json">{`
@@ -107,7 +107,7 @@ export default function ApiReference() {
 }
       `}</Code>
 
-      <Endpoint method="GET" path="/api/public/balance/:id" auth="x402" description="Live withdrawable balance. Lighter than /stream/:id — use this when you only need the claimable amount." />
+      <Endpoint method="GET" path="/api/public/balance/:id" auth="x402" description="Live withdrawable balance. Lighter than /stream/:id, use this when you only need the claimable amount." />
       <Code language="json">{`
 {
   "streamId":         "0x...",
@@ -146,7 +146,7 @@ export default function ApiReference() {
 }
       `}</Code>
 
-      <Endpoint method="GET" path="/api/public/streams/contractor/:address" auth="x402" description="All streams a contractor is receiving. Includes totalClaimable — sum of withdrawable balance across all active streams." />
+      <Endpoint method="GET" path="/api/public/streams/contractor/:address" auth="x402" description="All streams a contractor is receiving. Includes totalClaimable, sum of withdrawable balance across all active streams." />
       <Code language="json">{`
 {
   "address":        "0x...",
@@ -173,7 +173,7 @@ export default function ApiReference() {
             <tr><td><code>streamId</code></td><td>Yes</td><td>0x-prefixed bytes32 stream ID</td></tr>
             <tr><td><code>contractorAddress</code></td><td>Yes</td><td>Contractor wallet address</td></tr>
             <tr><td><code>verificationSource</code></td><td>No</td><td><code>github</code> | <code>jira</code> | <code>bitbucket</code> | <code>figma</code></td></tr>
-            <tr><td><code>verificationTarget</code></td><td>No</td><td>Repo path or ticket key — defaults to stream's registered value</td></tr>
+            <tr><td><code>verificationTarget</code></td><td>No</td><td>Repo path or ticket key, defaults to stream's registered value</td></tr>
             <tr><td><code>githubPayload</code></td><td>No</td><td>Raw GitHub webhook event body</td></tr>
           </tbody>
         </table>
@@ -201,7 +201,7 @@ export default function ApiReference() {
       </p>
       <Code language="bash">Authorization: Bearer {'<your-api-key>'}</Code>
 
-      <Endpoint method="GET" path="/api/v1/stream/:streamId/balance" auth="apikey" description="Live balance for a stream — includes earnedSnapshot and lastWindowStart for accounting integrations." />
+      <Endpoint method="GET" path="/api/v1/stream/:streamId/balance" auth="apikey" description="Live balance for a stream, includes earnedSnapshot and lastWindowStart for accounting integrations." />
       <Code language="bash">{`curl /api/v1/stream/0xSTREAM_ID \\
   -H "Authorization: Bearer <key>"`}</Code>
       <Code language="json">{`
@@ -217,7 +217,7 @@ export default function ApiReference() {
       `}</Code>
       <p>
         <code>earnedSnapshot</code> is the total earned at the last withdrawal. <code>lastWindowStart</code> marks when
-        the current window opened — together they let you reconstruct full earnings history without querying the contract.
+        the current window opened, together they let you reconstruct full earnings history without querying the contract.
       </p>
 
       <Endpoint method="GET" path="/api/v1/streams/pending" auth="apikey" description="Returns all expired streams with unreclaimed funds or unpaid contractor balances. Query by wallet address." />
@@ -267,7 +267,7 @@ export default function ApiReference() {
           <tbody>
             <tr><td><code>400</code></td><td>Invalid stream ID or wallet address format</td></tr>
             <tr><td><code>401</code></td><td>Missing or invalid API key (Developer API only)</td></tr>
-            <tr><td><code>402</code></td><td>Payment required — follow x402 flow (Public API only)</td></tr>
+            <tr><td><code>402</code></td><td>Payment required, follow x402 flow (Public API only)</td></tr>
             <tr><td><code>403</code></td><td>Caller is not the stream sender</td></tr>
             <tr><td><code>404</code></td><td>Stream not found in registry or on-chain</td></tr>
             <tr><td><code>422</code></td><td>Milestone verification failed</td></tr>

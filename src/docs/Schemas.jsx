@@ -5,7 +5,7 @@ export default function Schemas() {
     <>
       <h1>Response Schemas</h1>
       <p>
-        All numeric token amounts are returned as <strong>decimal strings</strong> — BigInt-safe for all clients.
+        All numeric token amounts are returned as <strong>decimal strings</strong>, BigInt-safe for all clients.
         Divide by the token's decimals to get a human-readable value.
       </p>
 
@@ -14,7 +14,7 @@ export default function Schemas() {
         <table style={{ margin: 0 }}>
           <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td><code>streamId</code></td><td>string</td><td><code>bytes32</code> — 0x-prefixed 64 hex chars</td></tr>
+            <tr><td><code>streamId</code></td><td>string</td><td><code>bytes32</code>, 0x-prefixed 64 hex chars</td></tr>
             <tr><td><code>chainId</code></td><td>number</td><td><code>421614</code> or <code>46630</code></td></tr>
             <tr><td><code>sender</code></td><td>string</td><td>Company wallet that created and funded the stream</td></tr>
             <tr><td><code>recipient</code></td><td>string</td><td>Contractor wallet receiving payment</td></tr>
@@ -24,7 +24,7 @@ export default function Schemas() {
             <tr><td><code>streamValidUntil</code></td><td>string</td><td>Unix timestamp of current window expiry</td></tr>
             <tr><td><code>totalDeposited</code></td><td>string</td><td>Total tokens deposited by the company</td></tr>
             <tr><td><code>totalWithdrawn</code></td><td>string</td><td>Total tokens already withdrawn by the contractor</td></tr>
-            <tr><td><code>nonce</code></td><td>string</td><td>On-chain nonce — increments on each extension</td></tr>
+            <tr><td><code>nonce</code></td><td>string</td><td>On-chain nonce, increments on each extension</td></tr>
             <tr><td><code>balance</code></td><td>string</td><td>Currently withdrawable amount</td></tr>
             <tr><td><code>earnedSnapshot</code></td><td>string</td><td>Cumulative earnings at the start of the current window</td></tr>
             <tr><td><code>lastWindowStart</code></td><td>string</td><td>Timestamp of the most recent extension</td></tr>
@@ -43,7 +43,7 @@ export default function Schemas() {
           <tbody>
             <tr><td><code>streamId</code></td><td>string</td><td><code>bytes32</code> identifier</td></tr>
             <tr><td><code>extensionDurationSeconds</code></td><td>number</td><td>Seconds the window will be extended</td></tr>
-            <tr><td><code>expiry</code></td><td>number</td><td>Unix timestamp — voucher is void after this</td></tr>
+            <tr><td><code>expiry</code></td><td>number</td><td>Unix timestamp, voucher is void after this</td></tr>
             <tr><td><code>signature</code></td><td>string</td><td>65-byte EIP-712 signature from the agent key</td></tr>
           </tbody>
         </table>
@@ -73,7 +73,7 @@ CronStreamRouter.extendStreamWindowWithSignature(
 
       <h3>Converting ratePerSecond</h3>
       <Code language="js">{`
-// USDC — 6 decimals
+// USDC, 6 decimals
 const ratePerSecond = BigInt("1157407407407");
 const usdcPerDay    = Number(ratePerSecond) / 1e6 * 86400;  // → 100 USDC/day
       `}</Code>

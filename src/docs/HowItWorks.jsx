@@ -2,18 +2,18 @@ export default function HowItWorks() {
   return (
     <>
       <h1>How It Works</h1>
-      <p>The full stream lifecycle — from creation to contractor withdrawal.</p>
+      <p>The full stream lifecycle, from creation to contractor withdrawal.</p>
 
       <h2>Stream lifecycle</h2>
 
       <div className="my-5 rounded-lg border border-border overflow-hidden divide-y divide-border">
         {[
-          { n: '01', title: 'Company deposits budget',        desc: 'Full engagement budget locked upfront. Stream opens LOCKED — contractor earns $0.00.' },
+          { n: '01', title: 'Company deposits budget',        desc: 'Full engagement budget locked upfront. Stream opens LOCKED, contractor earns $0.00.' },
           { n: '02', title: 'Contractor completes work',      desc: 'Ships code, closes a ticket, or delivers a design in whichever tool the stream is configured against.' },
           { n: '03', title: 'Agent verifies (3-layer check)', desc: 'Real code diff in /src · PR merged by senior engineer · CI/CD passed. All three must pass.' },
-          { n: '04', title: 'Agent signs EIP-712 voucher',    desc: 'Off-chain cryptographic signature with nonce + expiry — replay-proof and time-bounded.' },
+          { n: '04', title: 'Agent signs EIP-712 voucher',    desc: 'Off-chain cryptographic signature with nonce + expiry, replay-proof and time-bounded.' },
           { n: '05', title: 'Stream window opens',            desc: 'Contractor earns per second for the verified period. Balance accrues in real time.' },
-          { n: '06', title: 'Next period — stream re-locks',  desc: 'Each period requires a new verification. No continuous free flow.' },
+          { n: '06', title: 'Next period, stream re-locks',  desc: 'Each period requires a new verification. No continuous free flow.' },
         ].map(({ n, title, desc }) => (
           <div key={n} className="flex gap-4 px-5 py-4 bg-surface">
             <span className="text-xs font-mono text-muted mt-0.5 flex-shrink-0 w-6">{n}</span>
@@ -36,13 +36,13 @@ export default function HowItWorks() {
 
       <h3>Stream ID</h3>
       <p>
-        Every stream is a <code>bytes32</code> identifier — a 0x-prefixed 64-character hex string.
+        Every stream is a <code>bytes32</code> identifier, a 0x-prefixed 64-character hex string.
         Emitted in the <code>StreamCreated</code> event on creation. Use it as the primary key for all API calls.
       </p>
 
       <h3>Locked-start model</h3>
       <p>
-        A stream is born expired — <code>streamValidUntil = startTime</code> on creation.
+        A stream is born expired, <code>streamValidUntil = startTime</code> on creation.
         The contractor earns nothing until the agent verifies the first period and submits a signed voucher on-chain.
         The tap is off by default.
       </p>
@@ -55,8 +55,8 @@ export default function HowItWorks() {
           <tbody>
             <tr><td><code>streamId</code></td><td>Which stream to extend</td></tr>
             <tr><td><code>extensionDurationSeconds</code></td><td>How long to open the window (e.g. 604800 = 7 days)</td></tr>
-            <tr><td><code>nonce</code></td><td>On-chain nonce — prevents replay attacks</td></tr>
-            <tr><td><code>expiry</code></td><td>Unix timestamp — voucher is void after this</td></tr>
+            <tr><td><code>nonce</code></td><td>On-chain nonce, prevents replay attacks</td></tr>
+            <tr><td><code>expiry</code></td><td>Unix timestamp, voucher is void after this</td></tr>
           </tbody>
         </table>
       </div>

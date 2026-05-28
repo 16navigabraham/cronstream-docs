@@ -3,8 +3,10 @@ import { useState } from 'react';
 export default function Code({ children, language = '' }) {
   const [copied, setCopied] = useState(false);
 
+  const text = (Array.isArray(children) ? children.join('') : String(children ?? '')).trim();
+
   function copy() {
-    navigator.clipboard.writeText(children.trim()).then(() => {
+    navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -42,7 +44,7 @@ export default function Code({ children, language = '' }) {
       {/* Code */}
       <pre className="px-5 py-4 text-[0.8rem] leading-relaxed overflow-x-auto"
         style={{ color: '#7FDED2' }}>
-        <code>{children.trim()}</code>
+        <code>{text}</code>
       </pre>
     </div>
   );

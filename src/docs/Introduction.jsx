@@ -21,7 +21,7 @@ export default function Introduction() {
 
       <h2>What you can do right now</h2>
       <p>
-        The public API is open to any developer or AI agent — no account needed.
+        The public API is open to any developer or AI agent, no account needed.
         Paid endpoints use the <strong>x402 pay-per-call</strong> protocol (USDC on Base, per request).
       </p>
 
@@ -68,7 +68,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 const account  = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
 const fetch402 = wrapFetchWithPayment(fetch, { account });
 
-// $0.01 USDC — paid and retried automatically
+// $0.01 USDC, paid and retried automatically
 const res  = await fetch402('/api/public/balance/0xYOUR_STREAM_ID');
 const data = await res.json();
 

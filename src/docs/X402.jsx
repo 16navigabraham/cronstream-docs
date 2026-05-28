@@ -14,7 +14,7 @@ export default function X402() {
       <div className="my-5 rounded-lg border border-border divide-y divide-border overflow-hidden">
         {[
           { n: 1, title: 'Call the endpoint',           desc: 'Make a normal HTTP request with no payment header.' },
-          { n: 2, title: 'Receive HTTP 402',            desc: 'The server responds with payment instructions — price, pay-to address, token, network.' },
+          { n: 2, title: 'Receive HTTP 402',            desc: 'The server responds with payment instructions, price, pay-to address, token, network.' },
           { n: 3, title: 'Pay on-chain',                desc: 'Send the exact USDC amount to the pay-to address on Base (or Base Sepolia for testing).' },
           { n: 4, title: 'Retry with X-PAYMENT header', desc: 'Include the on-chain payment proof as a base64-encoded header and retry.' },
           { n: 5, title: 'Receive the response',        desc: 'The server verifies the proof and returns data. x402 SDKs handle steps 2–4 automatically.' },
@@ -47,7 +47,7 @@ export default function X402() {
 
       <h2>curl example</h2>
       <Code language="bash">{`
-# Without payment header — receive 402
+# Without payment header, receive 402
 curl {BASE_URL}/api/public/stream/0xYOUR_STREAM_ID
 
 # 402 response
@@ -88,7 +88,7 @@ console.log(data.isActive);  // boolean
       <Code language="python">{`
 import requests
 
-# Step 1 — get payment instructions
+# Step 1, get payment instructions
 r = requests.get(BASE_URL + "/api/public/stream/0xSTREAM_ID")
 if r.status_code == 402:
     instructions = r.json()

@@ -25,7 +25,7 @@ export default function Sidebar({ nav, pages, page, open, onNavigate }) {
                     transition-all duration-150
                     ${isActive
                       ? 'bg-accent-dim text-accent font-medium'
-                      : 'text-muted-fg hover:text-[#C8E8E4] hover:bg-[#0F1614]'}
+                      : 'text-muted-fg hover:text-[#C0E4EC] hover:bg-[#0C1518]'}
                   `}
                 >
                   {isActive && (

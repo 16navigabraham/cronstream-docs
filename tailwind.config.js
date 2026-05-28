@@ -4,14 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg:       '#0A0E0D',
-        surface:  '#0F1614',
-        border:   '#182220',
-        accent:   '#00D4AA',
-        'accent-dim': 'rgba(0,212,170,0.10)',
-        'accent-glow': 'rgba(0,212,170,0.06)',
-        muted:    '#4A6E67',
-        'muted-fg': '#7FA99F',
+        bg:       '#080D0F',
+        surface:  '#0C1518',
+        border:   '#152226',
+        accent:   '#22C5D3',
+        'accent-dim': 'rgba(34,197,211,0.10)',
+        'accent-glow': 'rgba(34,197,211,0.06)',
+        muted:    '#3D6878',
+        'muted-fg': '#6AAFC0',
       },
       fontFamily: {
         sans:     ['DM Sans',      'system-ui', 'sans-serif'],

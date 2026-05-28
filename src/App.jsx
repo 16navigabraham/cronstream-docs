@@ -43,7 +43,7 @@ export default function App() {
   const next       = pageKeys[currentIdx + 1];
 
   return (
-    <div className="min-h-screen bg-bg text-[#C8E8E4]" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-bg text-[#C0E4EC]" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
 
       {/* ── Navbar ─────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-bg/90 backdrop-blur-sm flex items-center px-5 gap-4">
@@ -63,7 +63,7 @@ export default function App() {
         <div className="flex items-center gap-2.5 flex-shrink-0">
           <img src="/logo.png" alt="CronStream" className="w-6 h-6 rounded-md object-contain" />
           <span style={{ fontFamily: "'Outfit', system-ui", fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.02em' }}
-            className="text-[#E0F5F2]">
+            className="text-[#DCF2F7]">
             CronStream <span className="text-muted font-normal">Docs</span>
           </span>
         </div>

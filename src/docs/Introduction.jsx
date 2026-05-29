@@ -7,7 +7,7 @@ export default function Introduction() {
         <h1>CronStream Developer Docs</h1>
         <p className="text-lg text-muted-fg leading-relaxed mt-3 mb-0">
           CronStream is an autonomous, milestone-gated B2B token streaming protocol.
-          Money flows to contractors only after an off-chain agent verifies real work —
+          Money flows to contractors only after an off-chain agent verifies real work -
           a merged pull request, a closed Jira ticket, an approved Figma design.
         </p>
       </div>

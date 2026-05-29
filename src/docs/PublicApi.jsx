@@ -190,11 +190,23 @@ export default function PublicApi() {
             </tbody>
           </table>
         </div>
+        <p>
+          The nonce is always read fresh from the contract, never from the request body, so the
+          voucher can't go stale. <code>extensionDurationSeconds</code> equals the stream's registered
+          period (the window the company set up), not a fixed value.
+        </p>
         <h3>Success response</h3>
         <Code language="json">{`
 {
   "success": true,
   "nonce":   3,
+  "verification": {
+    "source":          "github",
+    "passed":          true,
+    "qualifyingFiles": 3,
+    "prNumber":        42,
+    "repository":      "owner/repo"
+  },
   "voucher": {
     "streamId":                 "0x...",
     "extensionDurationSeconds": 604800,
@@ -206,10 +218,11 @@ export default function PublicApi() {
         <p>
           The <code>signature</code> is an EIP-712 signature over{' '}
           <code>ExtensionVoucher(streamId, extensionDurationSeconds, nonce, expiry)</code>.
-          Pass the full <code>voucher</code> object to <code>extendStream()</code> on the contract.
+          Pass the full <code>voucher</code> object to <code>extendStreamWindowWithSignature()</code> on the contract.
         </p>
         <h3>Failure response</h3>
-        <Code language="json">{`{ "success": false, "error": "No qualifying PR found in the last 7 days" }`}</Code>
+        <p>Returns <code>422</code> when verification fails, with the gate that rejected it:</p>
+        <Code language="json">{`{ "success": false, "error": "No qualifying code changes - need ≥1 addition in /src or /contracts", "failedLayer": 1 }`}</Code>
       </Endpoint>
 
       {/* ── Errors ───────────────────────────────────────────── */}

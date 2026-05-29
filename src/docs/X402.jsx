@@ -5,7 +5,7 @@ export default function X402() {
     <>
       <h1>x402 Payment Protocol</h1>
       <p>
-        CronStream's public API uses <a href="https://x402.org" target="_blank" rel="noopener noreferrer">x402</a> —
+        CronStream's public API uses <a href="https://x402.org" target="_blank" rel="noopener noreferrer">x402</a> -
         an open HTTP payment standard built for AI agents and automated clients.
         Pay per request in USDC on Base. No account. No API key.
       </p>

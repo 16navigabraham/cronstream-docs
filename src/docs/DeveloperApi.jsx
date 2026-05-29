@@ -128,7 +128,7 @@ export default function DeveloperApi() {
               <tr><td><code>verificationSource</code></td><td>No</td><td><code>github</code> | <code>jira</code> | <code>bitbucket</code> | <code>figma</code>. Defaults to the stream's registered source.</td></tr>
               <tr><td><code>verificationTarget</code></td><td>No</td><td>Repo path, ticket key, or URL. Defaults to the stream's registered value.</td></tr>
               <tr><td><code>githubPayload</code></td><td>Required for GitHub</td><td>Raw GitHub webhook event body. Must be a merged PR with passing CI.</td></tr>
-              <tr><td><code>extensionDurationSeconds</code></td><td>No</td><td>How long to extend the stream window. Defaults to 7 days (604800).</td></tr>
+              <tr><td><code>extensionDurationSeconds</code></td><td>No</td><td>Period length in seconds. Standard B2B periods: 1 week (604800), 2 weeks (1209600), or 1 month (2592000). Minimum 1 week. Defaults to the stream's registered period.</td></tr>
             </tbody>
           </table>
         </div>
@@ -173,11 +173,19 @@ export default function DeveloperApi() {
   "verificationSource":       "github",
   "verificationTarget":       "owner/repo",
   "recipient":                "0x...",
+  "token":                    "0x...",
   "ratePerSecond":            "1157407407407",
   "extensionDurationSeconds": 604800,
   "chainId":                  421614
 }
         `}</Code>
+        <p>
+          <strong>All fields are required.</strong> A stream registered with missing
+          fields cannot be verified, so the agent rejects the request with
+          <code>400 Missing required fields</code>. Register only after the
+          <code>createStream</code> transaction confirms, using values from the
+          <code>StreamCreated</code> event.
+        </p>
         <div className="my-3 rounded-lg border border-border overflow-hidden">
           <table style={{ margin: 0 }}>
             <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
@@ -186,14 +194,15 @@ export default function DeveloperApi() {
               <tr><td><code>verificationSource</code></td><td>Yes</td><td><code>github</code> | <code>jira</code> | <code>bitbucket</code> | <code>figma</code></td></tr>
               <tr><td><code>verificationTarget</code></td><td>Yes</td><td>Repo path (<code>owner/repo</code>), Jira project key, Bitbucket workspace/repo, or Figma file URL</td></tr>
               <tr><td><code>recipient</code></td><td>Yes</td><td>Contractor wallet address</td></tr>
+              <tr><td><code>token</code></td><td>Yes</td><td>ERC-20 token address being streamed</td></tr>
               <tr><td><code>ratePerSecond</code></td><td>Yes</td><td>Token units per second as a string (from the <code>StreamCreated</code> event)</td></tr>
-              <tr><td><code>extensionDurationSeconds</code></td><td>No</td><td>Period length in seconds. Defaults to 604800 (7 days).</td></tr>
-              <tr><td><code>chainId</code></td><td>No</td><td>Chain the stream is on. Defaults to 421614 (Arbitrum Sepolia).</td></tr>
+              <tr><td><code>extensionDurationSeconds</code></td><td>Yes</td><td>Period length in seconds. Standard B2B periods: 1 week (604800), 2 weeks (1209600), or 1 month (2592000), minimum 1 week. Stored as the stream's period and used to time arrears verification.</td></tr>
+              <tr><td><code>chainId</code></td><td>Yes</td><td>Chain the stream is on (421614 Arbitrum Sepolia, 46630 Robinhood).</td></tr>
             </tbody>
           </table>
         </div>
         <h3>Response</h3>
-        <Code language="json">{`{ "success": true, "streamId": "0x..." }`}</Code>
+        <Code language="json">{`{ "success": true, "streamId": "0x...", "verificationSource": "github", "verificationTarget": "owner/repo" }`}</Code>
       </Endpoint>
 
       <Endpoint
@@ -244,42 +253,53 @@ export default function DeveloperApi() {
         <p>Returns <code>403</code> if the caller is not the stream sender.</p>
       </Endpoint>
 
-      {/* ── GITHUB WEBHOOK ───────────────────────────────────── */}
-      <h2>GitHub webhook (autonomous mode)</h2>
+      {/* ── GITHUB APP + AUTONOMOUS VERIFICATION ─────────────── */}
+      <h2>Connecting GitHub (autonomous mode)</h2>
       <p>
-        For fully autonomous operation, point your GitHub repo webhook at this endpoint.
-        When a PR is merged with passing CI, the agent verifies the work, signs the voucher,
-        and submits the <code>extendStream()</code> transaction on-chain itself — no backend required.
+        CronStream connects to GitHub as a <strong>GitHub App</strong>, the same way Render or Vercel do -
+        not a manual per-repo webhook. Whoever owns the verification repo installs the app on it from
+        <strong> Settings {'>'} Integrations {'>'} Connect GitHub</strong>. Once installed, GitHub delivers
+        events for every granted repo to the agent automatically. There is no webhook URL, secret, or
+        payload configuration to set up by hand.
       </p>
+      <div className="my-3 rounded-lg border border-border overflow-hidden">
+        <table style={{ margin: 0 }}>
+          <thead><tr><th>Who owns the repo</th><th>Who installs the app</th></tr></thead>
+          <tbody>
+            <tr><td>Company-owned repo</td><td>The company installs it; the contractor works as a collaborator. Their pushes fire events because the app is on the repo.</td></tr>
+            <tr><td>Contractor-owned repo</td><td>The contractor (repo admin) installs it. The agent resolves the installation by repo, so verification works regardless of which account installed.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        No commit-message metadata is required. The agent maps each repo to its installation and looks up
+        the registered stream by repo automatically. The legacy <code>CronStream-Stream-Id</code> /
+        <code>CronStream-Nonce</code> commit tags are still parsed if present, but are no longer needed.
+      </p>
+
+      <h3>Pay-in-arrears verification</h3>
+      <p>
+        Payment follows a B2B pay-in-arrears model. The contractor works a full period first; the agent
+        then verifies the period's work and opens the payment window. Concretely:
+      </p>
+      <ul>
+        <li>The webhook is informational - it confirms events arrive but never extends mid-period.</li>
+        <li>A background poller runs every 15 minutes. Once a stream's full period has elapsed, it checks
+            the source (merged PRs <em>and</em> direct commits to the default branch, with passing CI) for
+            qualifying work since the last window.</li>
+        <li>If verified, it signs the EIP-712 voucher and submits <code>extendStreamWindowWithSignature()</code>
+            on-chain - opening one period's payment window. If not, the stream stays frozen and the company can reclaim.</li>
+      </ul>
 
       <Endpoint
         method="POST"
         path="/api/v1/webhook/github"
         auth="hmac"
-        description="Receives GitHub webhook events. On a merged PR with passing CI, the agent runs verification, signs the extension voucher, and submits on-chain autonomously."
+        description="Receives GitHub App events (push, pull_request, workflow_run, installation). HMAC-verified against GITHUB_WEBHOOK_SECRET. Installation events map repos to their app installation; push/PR events are logged. All verification and extension timing is owned by the poller, not this endpoint."
       >
-        <h3>GitHub webhook setup</h3>
-        <div className="my-3 rounded-lg border border-border overflow-hidden">
-          <table style={{ margin: 0 }}>
-            <thead><tr><th>Setting</th><th>Value</th></tr></thead>
-            <tbody>
-              <tr><td>Payload URL</td><td><code>{BASE}/api/v1/webhook/github</code></td></tr>
-              <tr><td>Content type</td><td><code>application/json</code></td></tr>
-              <tr><td>Secret</td><td>Must match <code>GITHUB_WEBHOOK_SECRET</code> in agent config</td></tr>
-              <tr><td>Events</td><td>Pull requests, Workflow runs</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <h3>PR description convention</h3>
-        <p>Add these lines to the PR body so the agent knows which stream to extend:</p>
-        <Code language="markdown">{`
-CronStream-Stream-Id: 0x<64 hex chars>
-CronStream-Nonce: <current on-chain nonce>
-        `}</Code>
         <p>
-          The agent reads these fields, runs 3-layer verification (PR merged, CI passed, nonce valid),
-          signs the voucher, and calls <code>extendStream()</code> on the contract.
-          No action from the company is needed.
+          This endpoint is managed by the GitHub App - you don't call or configure it directly.
+          Installing the app from the dashboard wires it up automatically.
         </p>
       </Endpoint>
 
@@ -366,7 +386,7 @@ CronStream-Nonce: <current on-chain nonce>
           <tbody>
             <tr><td><code>400</code></td><td>Invalid stream ID, address, or missing required fields</td></tr>
             <tr><td><code>401</code></td><td>Missing or invalid API key or JWT</td></tr>
-            <tr><td><code>402</code></td><td>x402 payment required — response body contains payment instructions</td></tr>
+            <tr><td><code>402</code></td><td>x402 payment required - response body contains payment instructions</td></tr>
             <tr><td><code>403</code></td><td>Caller is not the stream sender</td></tr>
             <tr><td><code>404</code></td><td>Stream not found in registry or on-chain</td></tr>
             <tr><td><code>409</code></td><td>Stream already registered</td></tr>

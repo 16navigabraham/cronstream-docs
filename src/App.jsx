@@ -8,20 +8,23 @@ import X402          from './docs/X402.jsx';
 import PublicApi     from './docs/PublicApi.jsx';
 import DeveloperApi  from './docs/DeveloperApi.jsx';
 import Schemas       from './docs/Schemas.jsx';
+import Roadmap       from './docs/Roadmap.jsx';
 
 const PAGES = {
   introduction:    { label: 'Introduction',     component: Introduction  },
   'how-it-works':  { label: 'How It Works',     component: HowItWorks   },
   x402:            { label: 'x402 Protocol',    component: X402          },
   'public-api':    { label: 'Public API',       component: PublicApi     },
-  'developer-api': { label: 'Company API',       component: DeveloperApi  },
+  'developer-api': { label: 'Company API',      component: DeveloperApi  },
   schemas:         { label: 'Response Schemas', component: Schemas       },
+  roadmap:         { label: 'Roadmap',          component: Roadmap       },
 };
 
 const NAV = [
   { group: 'Getting Started', items: ['introduction', 'how-it-works'] },
   { group: 'Payments',        items: ['x402'] },
   { group: 'API',             items: ['public-api', 'developer-api', 'schemas'] },
+  { group: 'Project',         items: ['roadmap'] },
 ];
 
 export default function App() {

@@ -86,6 +86,34 @@ export default function HowItWorks() {
         tokens that have not been earned. Earned-but-not-withdrawn tokens remain available to the contractor.
         The contract enforces this split mathematically.
       </p>
+
+      <h3>Grace periods</h3>
+      <p>
+        Companies cannot reclaim immediately after a stream expires. A grace period gives the contractor
+        time to withdraw earned funds before the company can claw back unearned tokens.
+      </p>
+      <div className="my-4 rounded-lg border border-border overflow-hidden">
+        <table style={{ margin: 0 }}>
+          <thead><tr><th>Scenario</th><th>Grace period</th><th>Clock starts</th></tr></thead>
+          <tbody>
+            <tr><td>Frozen stream (was active, window lapsed)</td><td>7 days</td><td><code>streamValidUntil</code></td></tr>
+            <tr><td>Pending stream (never activated)</td><td>14 days</td><td><code>startTime</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Stream ID routing</h3>
+      <p>
+        Contractors embed their stream ID in commit messages or PR descriptions to route the GitHub
+        webhook directly to their stream. This is required when a repo has multiple active streams
+        (e.g. two contractors working on the same repository).
+      </p>
+      <p>Format: one or more lines of:</p>
+      <pre><code>CronStream-Stream-Id: 0x&lt;64-hex-chars&gt;</code></pre>
+      <p>
+        Multiple IDs in a single commit message are all processed. The agent verifies and extends each
+        matching stream independently.
+      </p>
     </>
   );
 }

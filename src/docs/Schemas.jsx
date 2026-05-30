@@ -62,14 +62,18 @@ CronStreamRouter.extendStreamWindowWithSignature(
       <h2>Token decimals</h2>
       <div className="my-4 rounded-lg border border-border overflow-hidden">
         <table style={{ margin: 0 }}>
-          <thead><tr><th>Token</th><th>Decimals</th><th>1 whole token</th></tr></thead>
+          <thead><tr><th>Token</th><th>Decimals</th><th>1 whole token</th><th>Address (Arbitrum Sepolia)</th></tr></thead>
           <tbody>
-            <tr><td>USDC</td><td>6</td><td><code>1000000</code></td></tr>
-            <tr><td>USDT</td><td>6</td><td><code>1000000</code></td></tr>
-            <tr><td>Robinhood stock tokens</td><td>18</td><td><code>1000000000000000000</code></td></tr>
+            <tr><td>USDC</td><td>6</td><td><code>1000000</code></td><td><code>0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d</code></td></tr>
+            <tr><td>CRM</td><td>6</td><td><code>1000000</code></td><td><code>0x2Ca6e6FbAA8D0Bc27a64Ca079aFa6bf5cc8C7ad1</code></td></tr>
+            <tr><td>Robinhood stock tokens</td><td>18</td><td><code>1000000000000000000</code></td><td>varies</td></tr>
           </tbody>
         </table>
       </div>
+      <p>
+        CRM is CronStream's native token. 1 CRM = $1. Claim from the faucet at{' '}
+        <a href="https://cronstream.xyz/faucet" target="_blank" rel="noopener noreferrer">cronstream.xyz/faucet</a>.
+      </p>
 
       <h3>Converting ratePerSecond</h3>
       <Code language="js">{`

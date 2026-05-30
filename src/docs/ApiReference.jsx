@@ -86,7 +86,7 @@ export default function ApiReference() {
       `}</Code>
 
       <Endpoint method="GET" path="/api/public/stream/:id" auth="x402" description="Full stream state, registry metadata and live on-chain data combined." />
-      <Code language="bash">{`curl {BASE_URL}/api/public/stream/0xSTREAM_ID \\
+      <Code language="bash">{`curl https://api.cronstream.xyz/api/public/stream/0xSTREAM_ID \\
   -H "X-PAYMENT: <proof>"`}</Code>
       <Code language="json">{`
 {

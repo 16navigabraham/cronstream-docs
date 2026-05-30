@@ -48,7 +48,7 @@ export default function X402() {
       <h2>curl example</h2>
       <Code language="bash">{`
 # Without payment header, receive 402
-curl {BASE_URL}/api/public/stream/0xYOUR_STREAM_ID
+curl https://api.cronstream.xyz/api/public/stream/0xYOUR_STREAM_ID
 
 # 402 response
 {
@@ -63,7 +63,7 @@ curl {BASE_URL}/api/public/stream/0xYOUR_STREAM_ID
 }
 
 # Retry with payment proof
-curl {BASE_URL}/api/public/stream/0xYOUR_STREAM_ID \\
+curl https://api.cronstream.xyz/api/public/stream/0xYOUR_STREAM_ID \\
   -H "X-PAYMENT: <base64-encoded-proof>"
       `}</Code>
 
@@ -77,7 +77,7 @@ const account  = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
 const fetch402 = wrapFetchWithPayment(fetch, { account });
 
 // 402 → pay → retry handled automatically
-const res  = await fetch402(BASE_URL + '/api/public/balance/0xSTREAM_ID');
+const res  = await fetch402('https://api.cronstream.xyz/api/public/balance/0xSTREAM_ID');
 const data = await res.json();
 
 console.log(data.balance);   // raw units
@@ -89,7 +89,7 @@ console.log(data.isActive);  // boolean
 import requests
 
 # Step 1, get payment instructions
-r = requests.get(BASE_URL + "/api/public/stream/0xSTREAM_ID")
+r = requests.get("https://api.cronstream.xyz/api/public/stream/0xSTREAM_ID")
 if r.status_code == 402:
     instructions = r.json()
     # Pay on-chain, build the X-PAYMENT proof header

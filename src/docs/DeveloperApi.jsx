@@ -196,7 +196,7 @@ export default function DeveloperApi() {
               <tr><td><code>recipient</code></td><td>Yes</td><td>Contractor wallet address</td></tr>
               <tr><td><code>token</code></td><td>Yes</td><td>ERC-20 token address being streamed</td></tr>
               <tr><td><code>ratePerSecond</code></td><td>Yes</td><td>Token units per second as a string (from the <code>StreamCreated</code> event)</td></tr>
-              <tr><td><code>extensionDurationSeconds</code></td><td>Yes</td><td>Period length in seconds. Standard B2B periods: 1 week (604800), 2 weeks (1209600), or 1 month (2592000), minimum 1 week. Stored as the stream's period and used to time arrears verification.</td></tr>
+              <tr><td><code>extensionDurationSeconds</code></td><td>Yes</td><td>Period length in seconds. Standard B2B periods: 1 week (604800), 2 weeks (1209600), or 1 month (2592000), minimum 1 week. Stored as the stream's period - the size of each window the agent opens or tops up when work is verified.</td></tr>
               <tr><td><code>chainId</code></td><td>Yes</td><td>Chain the stream is on (421614 Arbitrum Sepolia, 46630 Robinhood).</td></tr>
             </tbody>
           </table>
@@ -277,25 +277,30 @@ export default function DeveloperApi() {
         <code>CronStream-Nonce</code> commit tags are still parsed if present, but are no longer needed.
       </p>
 
-      <h3>Pay-in-arrears verification</h3>
+      <h3>Continuous-delivery verification</h3>
       <p>
-        Payment follows a B2B pay-in-arrears model. The contractor works a full period first; the agent
-        then verifies the period's work and opens the payment window. Concretely:
+        Payment is tied to delivery, not the calendar. The stream starts locked and begins flowing the
+        moment work is first verified, then keeps flowing as long as the contractor keeps shipping. If
+        delivery stops, the window decays and the stream freezes within one period. Concretely:
       </p>
       <ul>
-        <li>The webhook is informational - it confirms events arrive but never extends mid-period.</li>
-        <li>A background poller runs every 15 minutes. Once a stream's full period has elapsed, it checks
-            the source (merged PRs <em>and</em> direct commits to the default branch, with passing CI) for
-            qualifying work since the last window.</li>
-        <li>If verified, it signs the EIP-712 voucher and submits <code>extendStreamWindowWithSignature()</code>
-            on-chain - opening one period's payment window. If not, the stream stays frozen and the company can reclaim.</li>
+        <li>The GitHub App webhook drives it. On a merged PR or a push to the default branch, the agent
+            looks up the stream(s) registered to that repo and verifies the work (merged PRs <em>and</em>
+            direct commits, with passing CI) since the last window.</li>
+        <li>When a stream is <strong>pending</strong> (locked) and qualifying work is found, the agent opens
+            a window immediately - no waiting a full period first.</li>
+        <li>When an active stream is within 48h of expiring and new work exists, the agent tops it up by one
+            period, so a delivering contractor never actually freezes - the balance streams continuously. A
+            stream with healthy runway is left untouched, so frequent merges never stack runaway windows.</li>
+        <li>Each extension signs the EIP-712 voucher and submits <code>extendStreamWindowWithSignature()</code>
+            on-chain. If no qualifying work is found, the stream freezes and the company can reclaim.</li>
       </ul>
 
       <Endpoint
         method="POST"
         path="/api/v1/webhook/github"
         auth="hmac"
-        description="Receives GitHub App events (push, pull_request, workflow_run, installation). HMAC-verified against GITHUB_WEBHOOK_SECRET. Installation events map repos to their app installation; push/PR events are logged. All verification and extension timing is owned by the poller, not this endpoint."
+        description="Receives GitHub App events (push, pull_request, workflow_run, installation). HMAC-verified against GITHUB_WEBHOOK_SECRET. Installation events map repos to their app installation; a merged PR or default-branch push triggers verification for every stream registered to that repo and extends it if qualifying work is found."
       >
         <p>
           This endpoint is managed by the GitHub App - you don't call or configure it directly.

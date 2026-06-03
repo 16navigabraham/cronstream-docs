@@ -95,7 +95,7 @@ export default function Roadmap() {
             </tr>
             <tr>
               <td><code>figma</code></td>
-              <td>File updated and approved</td>
+              <td>FILE_COMMENT event with approval keyword (approved, LGTM, ✅)</td>
               <td>Frame diff detection + approval status</td>
             </tr>
           </tbody>
@@ -116,6 +116,8 @@ export default function Roadmap() {
       <p>
         The public API uses the x402 pay-per-call protocol. Any developer, company, or AI agent
         can query stream state and trigger verification programmatically — no account, no API key.
+        Rate limiting is enforced per payer wallet address (60 calls/minute by default) — abuse
+        costs the attacker real USDC, not just compute.
       </p>
       <p>
         The roadmap for this track is about what gets built on top of CronStream, not inside it.

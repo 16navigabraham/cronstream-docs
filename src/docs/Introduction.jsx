@@ -10,6 +10,13 @@ export default function Introduction() {
           Money flows to contractors only after an off-chain agent verifies real work -
           a merged pull request, a closed Jira ticket, an approved Figma design.
         </p>
+        <p className="text-muted-fg mt-4 mb-0">
+          CronStream is open source. Browse the smart contracts, the autonomous agent, and the
+          frontend on{' '}
+          <a href="https://github.com/thecronstream/CronStream" target="_blank" rel="noopener noreferrer">
+            github.com/thecronstream/CronStream
+          </a>.
+        </p>
       </div>
 
       <blockquote>

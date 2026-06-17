@@ -9,14 +9,13 @@ export async function generateMetadata({ params }) {
   return metadata
 }
 
-const { wrapper: Wrapper } = useMDXComponents()
-
-export default async function Page({ params, ...props }) {
+export default async function Page({ params }) {
   const { slug } = await params
   const { default: MDXContent, toc, metadata } = await importPage(slug)
+  const { wrapper: Wrapper } = useMDXComponents()
   return (
     <Wrapper toc={toc} metadata={metadata}>
-      <MDXContent params={slug} {...props} />
+      <MDXContent params={slug} />
     </Wrapper>
   )
 }

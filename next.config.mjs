@@ -1,8 +1,13 @@
 import nextra from 'nextra'
 
-export default nextra({
+const withNextra = nextra({
+  contentDirBasePath: '/',
   defaultShowCopyCode: true,
-})({
+})
+
+export default withNextra({
   output: 'export',
   images: { unoptimized: true },
+  reactStrictMode: true,
+  trailingSlash: false,
 })

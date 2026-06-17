@@ -1,0 +1,111 @@
+---
+title: Roadmap
+description: CronStream development roadmap. Robinhood Chain stock token payroll, compliance tooling, mainnet deployment, and the x402 API ecosystem.
+---
+
+import { Callout } from 'nextra/components'
+
+# Roadmap
+
+CronStream is live on Arbitrum Sepolia and Robinhood Chain with GitHub verification,
+multi-source milestone gating, and the x402 public API. This roadmap reflects where the
+protocol goes next — ordered by the problems it solves, not by features.
+
+## Robinhood Chain — Stock Token payroll
+
+Robinhood Chain natively issues tokenized stock tokens — AAPL, TSLA, GOOGL — as ERC-20s.
+CronStream streams any ERC-20. The combination creates a compensation primitive that has
+never existed before.
+
+<Callout>
+  A startup streams 2 AAPL tokens per day to a contractor as they ship code.
+  Real time. Milestone-gated. If they stop delivering, the company reclaims
+  the unearned stock instantly. No equity paperwork. No cliff. No trust required.
+</Callout>
+
+Planned work on this track:
+
+- Robinhood Chain mainnet deployment alongside Arbitrum One
+- Stock token display — show AAPL/TSLA/GOOGL with price context in stream dashboards
+- Stock token payroll statements — PDF exports that reference the underlying equity value at time of payment
+- Multi-token streams — contractor receives USDC + stock tokens in a single stream
+
+No other streaming protocol is building on Robinhood Chain. This is the only place where
+milestone-gated equity compensation exists on-chain.
+
+## Compliance and audit tooling
+
+Global regulators are moving hard into Web3 corporate accounting. IRS 1099-DA in the US
+requires proof of why money moved, not just that it moved. MiCA in Europe creates compliance
+exposure for corporate treasuries running unconditional streams.
+
+Every dollar CronStream unlocks is already tied to a cryptographic on-chain event. The next
+step is making that audit trail readable by accountants, legal teams, and regulators.
+
+- **Structured audit export** — every extension voucher, verification result, and
+  tx hash in a signed, timestamped PDF with on-chain proof links
+- **Sanctions screening** — stream auto-freezes if contractor address appears on
+  an OFAC update. No human intervention, no delayed reaction
+- **1099-DA compatible records** — US-compliant payment records mapping each
+  payment to the verified deliverable that triggered it
+- **MiCA-aligned fields** — jurisdiction, legal entity identifiers, and purpose
+  codes on stream creation for EU corporate treasuries
+
+The period statement PDF available today is the first step. Structured compliance exports
+with cryptographic proof are the destination.
+
+## Verification depth
+
+GitHub verification runs a 3-layer gate. The other sources have different trust profiles
+by design — a company choosing Jira accepts a softer gate than GitHub. This will be
+documented as a first-class trust level on stream creation.
+
+| Source | Current gate | Planned |
+|---|---|---|
+| `github` | 3-layer: code diff + merged PR + CI pass | Stable |
+| `jira` | Ticket moved to Done in correct sprint | Story points threshold + sprint velocity check |
+| `bitbucket` | PR merged with passing pipelines | Diff quality check matching GitHub gate |
+| `figma` | FILE_COMMENT event with approval keyword (approved, LGTM, ✅) | Frame diff detection + approval status |
+
+## Mainnet deployment
+
+Both contracts are live on testnets. Mainnet targets:
+
+- Arbitrum One (chain ID 42161) — primary EVM target
+- Robinhood Chain mainnet — stock token payroll
+- Base — aligns with x402 payment settlement on Base
+
+## x402 API — building on CronStream
+
+The public API uses the x402 pay-per-call protocol. Any developer, company, or AI agent
+can query stream state and trigger verification programmatically — no account, no API key.
+Rate limiting is enforced per payer wallet address (60 calls/minute by default) — abuse
+costs the attacker real USDC, not just compute.
+
+The roadmap for this track is about what gets built on top of CronStream, not inside it.
+CronStream is the compliance and performance layer. Other products build the product layer
+on top:
+
+- HR platforms embedding milestone-gated payroll without building smart contracts
+- AI agents autonomously managing contractor streams based on project status
+- DAO tooling that ties treasury disbursements to on-chain governance outcomes
+- Accounting software pulling verified payment records directly via the x402 API
+
+## What is live today
+
+| Feature | Status |
+|---|---|
+| GitHub milestone verification (3-layer) | Live |
+| Jira / Bitbucket / Figma verification | Live |
+| Webhook-driven event verification | Live |
+| Robinhood Chain deployment | Live (testnet) |
+| Arbitrum Sepolia deployment | Live (testnet) |
+| x402 public API | Live |
+| Period statement PDF export | Live |
+| CRM token and faucet | Live on Arbitrum Sepolia |
+| Stock token payroll (AAPL, TSLA) | Live on Robinhood Testnet |
+| Sanctions screening | Roadmap |
+| Mainnet deployment | Roadmap |
+| 1099-DA compliant exports | Roadmap |
+
+Questions or partnership inquiries: [thecronstream@gmail.com](mailto:thecronstream@gmail.com)

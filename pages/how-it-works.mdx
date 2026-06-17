@@ -1,0 +1,114 @@
+---
+title: How It Works
+description: The full stream lifecycle, from creation to contractor withdrawal. Understand how CronStream verifies work and controls payment windows.
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# How It Works
+
+The full stream lifecycle, from creation to contractor withdrawal.
+
+## Stream lifecycle
+
+<Steps>
+
+### Company deposits budget
+
+Full engagement budget locked upfront. Stream opens LOCKED, contractor earns $0.00.
+
+### Contractor completes work
+
+Ships code, closes a ticket, or delivers a design in whichever tool the stream is configured against.
+
+### Agent verifies (3-layer check)
+
+Real code diff in `/src` · PR merged by senior engineer · CI/CD passed. All three must pass.
+
+### Agent signs EIP-712 voucher
+
+Off-chain cryptographic signature with nonce + expiry, replay-proof and time-bounded.
+
+### Stream window opens
+
+Contractor earns per second for the verified period. Balance accrues in real time.
+
+### Next period, stream re-locks
+
+Each period requires a new verification. No continuous free flow.
+
+</Steps>
+
+<Callout type="warning">
+  No work verified? The agent stops signing. The stream expires at its window boundary.
+  Company reclaims every unearned token. No dispute, no gas, no manual cancel.
+</Callout>
+
+## Key concepts
+
+### Stream ID
+
+Every stream is a `bytes32` identifier, a 0x-prefixed 64-character hex string.
+Emitted in the `StreamCreated` event on creation. Use it as the primary key for all API calls.
+
+### Locked-start model
+
+A stream is born expired, `streamValidUntil = startTime` on creation.
+The contractor earns nothing until the agent verifies the first period and submits a signed voucher on-chain.
+The tap is off by default.
+
+### Extension voucher
+
+An EIP-712 signed message produced by the agent after verification passes.
+
+| Field | Description |
+|---|---|
+| `streamId` | Which stream to extend |
+| `extensionDurationSeconds` | How long to open the window (e.g. 604800 = 7 days) |
+| `nonce` | On-chain nonce, prevents replay attacks |
+| `expiry` | Unix timestamp, voucher is void after this |
+
+### Gap time protection
+
+Dead time between a window expiry and the next re-extension is never counted as earned.
+The contract tracks `earnedSnapshot` and `lastWindowStart` to enforce this.
+
+### Verification sources
+
+| Source | What the agent checks |
+|---|---|
+| `github` | Real code diff in `/src` or `/contracts`, PR merged, CI/CD passed |
+| `jira` | Ticket moved to Done in the correct sprint |
+| `bitbucket` | PR merged with passing pipelines |
+| `figma` | File updated and approved |
+
+### Budget reclaim
+
+After a stream window expires, the company can call `reclaimUnearned()` to recover all
+tokens that have not been earned. Earned-but-not-withdrawn tokens remain available to the contractor.
+The contract enforces this split mathematically.
+
+### Grace periods
+
+Companies cannot reclaim immediately after a stream expires. A grace period gives the contractor
+time to withdraw earned funds before the company can claw back unearned tokens.
+
+| Scenario | Grace period | Clock starts |
+|---|---|---|
+| Frozen stream (was active, window lapsed) | 7 days | `streamValidUntil` |
+| Pending stream (never activated) | 14 days | `startTime` |
+
+### Stream ID routing
+
+Contractors embed their stream ID in commit messages or PR descriptions to route the GitHub
+webhook directly to their stream. This is required when a repo has multiple active streams
+(e.g. two contractors working on the same repository).
+
+Format: one or more lines of:
+
+```
+CronStream-Stream-Id: 0x<64-hex-chars>
+```
+
+Multiple IDs in a single commit message are all processed. The agent verifies and extends each
+matching stream independently.

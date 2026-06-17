@@ -1,0 +1,65 @@
+---
+title: Introduction
+description: CronStream is an autonomous, milestone-gated B2B token streaming protocol. Money flows to contractors only after an off-chain agent verifies real work.
+---
+
+import { Callout } from 'nextra/components'
+
+# CronStream Developer Docs
+
+CronStream is an autonomous, milestone-gated B2B token streaming protocol.
+Money flows to contractors only after an off-chain agent verifies real work —
+a merged pull request, a closed Jira ticket, an approved Figma design.
+
+<Callout type="info">
+  Direct contract integration is not yet open to external developers.
+  Everything in these docs works today against our deployed contracts on Arbitrum Sepolia and Robinhood Chain.
+</Callout>
+
+## What you can do right now
+
+The public API is open to any developer or AI agent, no account needed.
+Paid endpoints use the **x402 pay-per-call** protocol (USDC on Base, per request).
+
+| Endpoint | Price | Description |
+|---|---|---|
+| `GET /api/public/info` | Free | Pricing + usage instructions |
+| `GET /api/public/stream/:id` | $0.01 | Stream state + live balance |
+| `GET /api/public/balance/:id` | $0.01 | Withdrawable balance |
+| `GET /api/public/streams/company/:address` | $0.05 | All streams opened by a company |
+| `GET /api/public/streams/contractor/:address` | $0.05 | All streams a contractor receives |
+| `POST /api/public/verify-milestone` | $0.10 | Verify work + get signed extension voucher |
+
+Hit the free info endpoint first to get live pricing and the current pay-to address:
+
+```bash
+curl /api/public/info
+```
+
+## Deployed contracts
+
+| Network | Chain ID | Contract |
+|---|---|---|
+| Arbitrum Sepolia | `421614` | `0x5A141097BAF8D88f665217817A1f89e1663f0C16` |
+| Robinhood Chain | `46630` | `0x12B1c71A60CBC3Fdd44D3D974546D2751feC04eD` |
+
+## Quick start
+
+```bash
+npm install x402-fetch viem
+```
+
+```js
+import { wrapFetchWithPayment } from 'x402-fetch';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account  = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
+const fetch402 = wrapFetchWithPayment(fetch, { account });
+
+// $0.01 USDC, paid and retried automatically
+const res  = await fetch402('/api/public/balance/0xYOUR_STREAM_ID');
+const data = await res.json();
+
+console.log(data.balance);   // withdrawable amount (raw units)
+console.log(data.isActive);  // true if stream window is open
+```

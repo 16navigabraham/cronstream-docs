@@ -1,0 +1,218 @@
+---
+title: Public API
+description: CronStream Public API reference. Open to any wallet, developer, or AI agent. No account required. Paid endpoints use the x402 protocol.
+---
+
+import { Callout } from 'nextra/components'
+
+# Public API
+
+Open to any wallet, developer, or AI agent — no account required.
+Paid endpoints use the **x402 protocol**: the server returns HTTP 402 with payment
+instructions, your client pays per-request in USDC on Base, then retries.
+See the **x402 Protocol** page for the full payment flow and SDK examples.
+
+| Endpoint | Price |
+|---|---|
+| `GET /api/public/info` | Free |
+| `GET /api/public/stream/:id` | $0.01 USDC |
+| `GET /api/public/balance/:id` | $0.01 USDC |
+| `GET /api/public/streams/company/:address` | $0.05 USDC |
+| `GET /api/public/streams/contractor/:address` | $0.05 USDC |
+| `POST /api/public/verify-milestone` | $0.10 USDC |
+
+---
+
+## GET /api/public/info `free`
+
+Returns API metadata, current pricing, and the pay-to address. Always call this first to get the live pay-to address before making paid requests.
+
+```json
+{
+  "name":     "CronStream Public API",
+  "version":  "2.0.0",
+  "protocol": "x402",
+  "network":  "base-sepolia",
+  "payTo":    "0x...",
+  "pricing": {
+    "POST /api/public/verify-milestone":            "$0.10 USDC per call",
+    "GET  /api/public/stream/:id":                  "$0.01 USDC per call",
+    "GET  /api/public/balance/:id":                 "$0.01 USDC per call",
+    "GET  /api/public/streams/company/:address":    "$0.05 USDC per call",
+    "GET  /api/public/streams/contractor/:address": "$0.05 USDC per call"
+  }
+}
+```
+
+---
+
+## GET /api/public/stream/:id `$0.01`
+
+Full stream state — registry metadata combined with live on-chain data.
+
+**Path parameters**
+
+| Param | Description |
+|---|---|
+| `id` | 0x-prefixed bytes32 stream ID |
+
+**Response**
+
+```json
+{
+  "streamId":           "0x...",
+  "chainId":            421614,
+  "sender":             "0x...",
+  "recipient":          "0x...",
+  "token":              "0x...",
+  "ratePerSecond":      "1157407407407",
+  "streamValidUntil":   "1748000000",
+  "totalDeposited":     "2000000000",
+  "totalWithdrawn":     "500000000",
+  "balance":            "125000000",
+  "nonce":              "3",
+  "verificationSource": "github",
+  "verificationTarget": "owner/repo",
+  "createdAt":          1747000000
+}
+```
+
+---
+
+## GET /api/public/balance/:id `$0.01`
+
+Live withdrawable balance for a stream. Lighter than `/stream/:id`, use this when you only need the claimable amount.
+
+```json
+{
+  "streamId":         "0x...",
+  "chainId":          421614,
+  "balance":          "125000000",
+  "ratePerSecond":    "1157407407407",
+  "streamValidUntil": "1748000000",
+  "totalDeposited":   "2000000000",
+  "totalWithdrawn":   "500000000",
+  "isActive":         true
+}
+```
+
+`isActive` is `true` when `block.timestamp < streamValidUntil`.
+
+---
+
+## GET /api/public/streams/company/:address `$0.05`
+
+All streams opened by a company across all supported chains, with live on-chain state for each.
+
+```json
+{
+  "address": "0x...",
+  "count":   2,
+  "streams": [
+    {
+      "streamId":           "0x...",
+      "chainId":            421614,
+      "recipient":          "0x...",
+      "token":              "0x...",
+      "ratePerSecond":      "1157407407407",
+      "streamValidUntil":   "1748000000",
+      "totalDeposited":     "2000000000",
+      "totalWithdrawn":     "500000000",
+      "balance":            "125000000",
+      "isActive":           true,
+      "verificationSource": "github",
+      "verificationTarget": "owner/repo"
+    }
+  ]
+}
+```
+
+---
+
+## GET /api/public/streams/contractor/:address `$0.05`
+
+All streams a contractor is receiving. Includes `totalClaimable`, the sum of withdrawable balance across all active streams.
+
+```json
+{
+  "address":        "0x...",
+  "count":          2,
+  "totalClaimable": "250000000",
+  "streams": [ ... ]
+}
+```
+
+---
+
+## POST /api/public/verify-milestone `$0.10`
+
+Trigger milestone verification against the stream's registered source (GitHub, Jira, Bitbucket, Figma).
+Returns a signed EIP-712 extension voucher the company submits on-chain to extend the stream window.
+
+**Request body**
+
+```json
+{
+  "streamId":           "0x...",
+  "contractorAddress":  "0x...",
+  "verificationSource": "github",
+  "verificationTarget": "owner/repo"
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `streamId` | Yes | 0x-prefixed bytes32 stream ID |
+| `contractorAddress` | Yes | Contractor wallet address |
+| `verificationSource` | No | `github` \| `jira` \| `bitbucket` \| `figma`, defaults to stream's registered value |
+| `verificationTarget` | No | Repo path, ticket key, or URL, defaults to stream's registered value |
+| `githubPayload` | No | Raw GitHub webhook event body, if forwarding a webhook |
+
+The nonce is always read fresh from the contract, never from the request body, so the
+voucher can't go stale. `extensionDurationSeconds` equals the stream's registered
+period (the window the company set up), not a fixed value.
+
+**Success response**
+
+```json
+{
+  "success": true,
+  "nonce":   3,
+  "verification": {
+    "source":          "github",
+    "passed":          true,
+    "qualifyingFiles": 3,
+    "prNumber":        42,
+    "repository":      "owner/repo"
+  },
+  "voucher": {
+    "streamId":                 "0x...",
+    "extensionDurationSeconds": 604800,
+    "expiry":                   1748100000,
+    "signature":                "0x..."
+  }
+}
+```
+
+The `signature` is an EIP-712 signature over `ExtensionVoucher(streamId, extensionDurationSeconds, nonce, expiry)`.
+Pass the full `voucher` object to `extendStreamWindowWithSignature()` on the contract.
+
+**Failure response**
+
+Returns `422` when verification fails, with the gate that rejected it:
+
+```json
+{ "success": false, "error": "No qualifying code changes - need ≥1 addition in /src or /contracts", "failedLayer": 1 }
+```
+
+---
+
+## Error codes
+
+| Status | Meaning |
+|---|---|
+| `400` | Invalid stream ID or wallet address format |
+| `402` | Payment required, follow the x402 flow |
+| `404` | Stream not found in registry or on-chain |
+| `422` | Milestone verification failed, no qualifying deliverable found |
+| `500` | Internal error |

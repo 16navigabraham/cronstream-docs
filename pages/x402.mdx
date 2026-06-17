@@ -1,0 +1,113 @@
+---
+title: x402 Protocol
+description: CronStream's public API uses x402, an open HTTP payment standard built for AI agents and automated clients. Pay per request in USDC on Base.
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# x402 Payment Protocol
+
+CronStream's public API uses [x402](https://x402.org) —
+an open HTTP payment standard built for AI agents and automated clients.
+Pay per request in USDC on Base. No account. No API key.
+
+## How it works
+
+<Steps>
+
+### Call the endpoint
+
+Make a normal HTTP request with no payment header.
+
+### Receive HTTP 402
+
+The server responds with payment instructions, price, pay-to address, token, network.
+
+### Pay on-chain
+
+Send the exact USDC amount to the pay-to address on Base (or Base Sepolia for testing).
+
+### Retry with X-PAYMENT header
+
+Include the on-chain payment proof as a base64-encoded header and retry.
+
+### Receive the response
+
+The server verifies the proof and returns data. x402 SDKs handle steps 2–4 automatically.
+
+</Steps>
+
+## Pricing
+
+| Endpoint | Price |
+|---|---|
+| `GET /api/public/info` | Free |
+| `POST /api/public/verify-milestone` | $0.10 USDC |
+| `GET /api/public/stream/:id` | $0.01 USDC |
+| `GET /api/public/balance/:id` | $0.01 USDC |
+| `GET /api/public/streams/company/:address` | $0.05 USDC |
+| `GET /api/public/streams/contractor/:address` | $0.05 USDC |
+
+Payments go directly to the CronStream agent's signing wallet. No intermediary.
+
+## curl example
+
+```bash
+# Without payment header, receive 402
+curl https://api.cronstream.xyz/api/public/stream/0xYOUR_STREAM_ID
+
+# 402 response
+{
+  "x402Version": 1,
+  "accepts": [{
+    "scheme":             "exact",
+    "network":            "base-sepolia",
+    "maxAmountRequired":  "10000",
+    "payTo":              "0x...",
+    "asset":              "0x..."
+  }]
+}
+
+# Retry with payment proof
+curl https://api.cronstream.xyz/api/public/stream/0xYOUR_STREAM_ID \
+  -H "X-PAYMENT: <base64-encoded-proof>"
+```
+
+## TypeScript / JavaScript
+
+```bash
+npm install x402-fetch viem
+```
+
+```ts
+import { wrapFetchWithPayment } from 'x402-fetch';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account  = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
+const fetch402 = wrapFetchWithPayment(fetch, { account });
+
+// 402 → pay → retry handled automatically
+const res  = await fetch402('https://api.cronstream.xyz/api/public/balance/0xSTREAM_ID');
+const data = await res.json();
+
+console.log(data.balance);   // raw units
+console.log(data.isActive);  // boolean
+```
+
+## Python
+
+```python
+import requests
+
+# Step 1, get payment instructions
+r = requests.get("https://api.cronstream.xyz/api/public/stream/0xSTREAM_ID")
+if r.status_code == 402:
+    instructions = r.json()
+    # Pay on-chain, build the X-PAYMENT proof header
+    # See x402.org for the full proof encoding spec
+```
+
+<Callout type="info">
+  **Testing:** Use Base Sepolia USDC during development.
+  Call `GET /api/public/info` to confirm which network is active.
+</Callout>

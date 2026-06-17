@@ -1,0 +1,78 @@
+---
+title: Response Schemas
+description: Complete API response schemas and data models for CronStream integration. All token amounts are decimal strings.
+---
+
+# Response Schemas
+
+All numeric token amounts are returned as **decimal strings**, BigInt-safe for all clients.
+Divide by the token's decimals to get a human-readable value.
+
+## Stream object
+
+| Field | Type | Description |
+|---|---|---|
+| `streamId` | string | `bytes32`, 0x-prefixed 64 hex chars |
+| `chainId` | number | `421614` or `46630` |
+| `sender` | string | Company wallet that created and funded the stream |
+| `recipient` | string | Contractor wallet receiving payment |
+| `token` | string | ERC-20 token contract address |
+| `ratePerSecond` | string | Token units earned per second (raw) |
+| `startTime` | string | Unix timestamp of stream creation |
+| `streamValidUntil` | string | Unix timestamp of current window expiry |
+| `totalDeposited` | string | Total tokens deposited by the company |
+| `totalWithdrawn` | string | Total tokens already withdrawn by the contractor |
+| `nonce` | string | On-chain nonce, increments on each extension |
+| `balance` | string | Currently withdrawable amount |
+| `earnedSnapshot` | string | Cumulative earnings at the start of the current window |
+| `lastWindowStart` | string | Timestamp of the most recent extension |
+| `isActive` | boolean | `true` when `now < streamValidUntil` |
+| `verificationSource` | string | `github` \| `jira` \| `bitbucket` \| `figma` |
+| `verificationTarget` | string | Repo path, Jira project key, or Figma file URL |
+
+## Voucher object
+
+Returned by `POST /api/public/verify-milestone` on success.
+
+| Field | Type | Description |
+|---|---|---|
+| `streamId` | string | `bytes32` identifier |
+| `extensionDurationSeconds` | number | Seconds the window will be extended |
+| `expiry` | number | Unix timestamp, voucher is void after this |
+| `signature` | string | 65-byte EIP-712 signature from the agent key |
+
+Submit on-chain via:
+
+```solidity
+CronStreamRouter.extendStreamWindowWithSignature(
+  bytes32 streamId,
+  uint256 extensionDurationSeconds,
+  uint256 expiry,
+  bytes calldata signature
+)
+```
+
+## Token decimals
+
+| Token | Decimals | 1 whole token | Address (Arbitrum Sepolia) |
+|---|---|---|---|
+| USDC | 6 | `1000000` | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
+| CRM | 6 | `1000000` | `0x2Ca6e6FbAA8D0Bc27a64Ca079aFa6bf5cc8C7ad1` |
+| Robinhood stock tokens | 18 | `1000000000000000000` | varies |
+
+CRM is CronStream's native token. 1 CRM = $1. Claim from the faucet at [cronstream.xyz/faucet](https://cronstream.xyz/faucet).
+
+### Converting ratePerSecond
+
+```js
+// USDC, 6 decimals
+const ratePerSecond = BigInt("1157407407407");
+const usdcPerDay    = Number(ratePerSecond) / 1e6 * 86400;  // → 100 USDC/day
+```
+
+## Chain IDs
+
+| Network | Chain ID | Contract |
+|---|---|---|
+| Arbitrum Sepolia | `421614` | `0x5A141097BAF8D88f665217817A1f89e1663f0C16` |
+| Robinhood Chain (testnet) | `46630` | `0x12B1c71A60CBC3Fdd44D3D974546D2751feC04eD` |

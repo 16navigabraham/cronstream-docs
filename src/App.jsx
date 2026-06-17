@@ -2,6 +2,8 @@ import { useState } from 'react';
 import Sidebar      from './components/Sidebar.jsx';
 import Toc          from './components/Toc.jsx';
 import { useToc }   from './hooks/useToc.js';
+import { useMetaTags } from './hooks/useMetaTags.js';
+import { useSchemaMarkup } from './hooks/useSchemaMarkup.js';
 import Introduction  from './docs/Introduction.jsx';
 import HowItWorks    from './docs/HowItWorks.jsx';
 import X402          from './docs/X402.jsx';
@@ -27,10 +29,65 @@ const NAV = [
   { group: 'Project',         items: ['roadmap'] },
 ];
 
+const PAGE_METADATA = {
+  introduction: {
+    title: 'Introduction - CronStream Docs',
+    description: 'Learn the basics of CronStream. Understand how milestone-verified payment streams work and the core concepts.',
+    url: 'https://docs.cronstream.xyz#introduction',
+  },
+  'how-it-works': {
+    title: 'How It Works - CronStream Docs',
+    description: 'Deep dive into how CronStream verifies work across GitHub, Jira, Bitbucket, and Figma. Understand the autonomous agent verification process.',
+    url: 'https://docs.cronstream.xyz#how-it-works',
+  },
+  x402: {
+    title: 'x402 Protocol - CronStream Docs',
+    description: 'Complete specification of the x402 protocol. Learn how payment streams are created, extended, and verified on-chain.',
+    url: 'https://docs.cronstream.xyz#x402',
+  },
+  'public-api': {
+    title: 'Public API - CronStream Docs',
+    description: 'CronStream Public API reference. Query streams, profiles, and verification data. No authentication required.',
+    url: 'https://docs.cronstream.xyz#public-api',
+  },
+  'developer-api': {
+    title: 'Company API - CronStream Docs',
+    description: 'CronStream Developer API for companies. Create streams, manage contractors, and integrate with your systems.',
+    url: 'https://docs.cronstream.xyz#developer-api',
+  },
+  schemas: {
+    title: 'Response Schemas - CronStream Docs',
+    description: 'Complete API response schemas and data models for CronStream integration.',
+    url: 'https://docs.cronstream.xyz#schemas',
+  },
+  roadmap: {
+    title: 'Roadmap - CronStream Docs',
+    description: 'CronStream development roadmap. See what features are coming next and the future direction of the protocol.',
+    url: 'https://docs.cronstream.xyz#roadmap',
+  },
+};
+
 export default function App() {
   const [page, setPage]             = useState('introduction');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toc = useToc(page);
+
+  // Update metadata based on current page
+  const pageMetadata = PAGE_METADATA[page] || PAGE_METADATA.introduction;
+  useMetaTags(pageMetadata);
+
+  // Add schema markup for documentation
+  useSchemaMarkup({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: PAGES[page]?.label || 'CronStream Documentation',
+    description: pageMetadata.description,
+    url: pageMetadata.url,
+    author: {
+      '@type': 'Organization',
+      name: 'CronStream',
+    },
+  });
 
   const Page = PAGES[page]?.component ?? Introduction;
 

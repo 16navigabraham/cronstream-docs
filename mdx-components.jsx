@@ -1,8 +1,1 @@
-import { useMDXComponents as nextraComponents } from 'nextra-theme-docs'
-
-export function useMDXComponents(components = {}) {
-  return {
-    ...nextraComponents(components),
-    ...components,
-  }
-}
+export { useMDXComponents } from 'nextra-theme-docs'

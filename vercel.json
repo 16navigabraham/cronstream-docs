@@ -1,5 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "framework": null,
+  "buildCommand": "(git rev-parse --is-shallow-repository | grep -q true && git fetch --unshallow || echo 'already full clone') && npx next build && npx pagefind --site out --output-path out/_pagefind",
   "outputDirectory": "out",
-  "framework": null
+  "cleanUrls": true,
+  "trailingSlash": false
 }

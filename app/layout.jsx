@@ -1,6 +1,6 @@
 import { Layout, Navbar } from 'nextra-theme-docs'
 import { getPageMap } from 'nextra/page-map'
-import 'nextra-theme-docs/style.css'
+import './globals.css'
 
 export const metadata = {
   title: {
@@ -17,10 +17,15 @@ export const metadata = {
 }
 
 export default async function RootLayout({ children }) {
+  const pageMap = await getPageMap()
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
       <body>
         <Layout
+          pageMap={pageMap}
+          docsRepositoryBase="https://github.com/thecronstream/CronStream/tree/main"
+          nextThemes={{ defaultTheme: 'dark' }}
           navbar={
             <Navbar
               logo={
@@ -40,12 +45,9 @@ export default async function RootLayout({ children }) {
               }
             />
           }
-          pageMap={await getPageMap()}
-          docsRepositoryBase="https://github.com/thecronstream/CronStream/tree/main"
-          sidebar={{ defaultMenuCollapseLevel: 1 }}
-          toc={{ backToTop: true }}
           footer={<p>CronStream Protocol · Business Source License 1.1</p>}
-          primaryHue={168}
+          feedback={{ content: null }}
+          editLink={null}
         >
           {children}
         </Layout>

@@ -1,29 +1,22 @@
 export default {
   index: {
-    title: 'Introduction',
+    title: 'Overview',
+  },
+  problem: {
+    title: 'The Problem',
+  },
+  '-- protocol': {
+    type: 'separator',
+    title: 'Protocol',
   },
   'how-it-works': {
     title: 'How It Works',
   },
-  '-- payments': {
-    type: 'separator',
-    title: 'Payments',
+  architecture: {
+    title: 'Architecture',
   },
-  x402: {
-    title: 'x402 Protocol',
-  },
-  '-- api': {
-    type: 'separator',
-    title: 'API',
-  },
-  'public-api': {
-    title: 'Public API',
-  },
-  'developer-api': {
-    title: 'Company API',
-  },
-  schemas: {
-    title: 'Response Schemas',
+  economics: {
+    title: 'Economics',
   },
   '-- project': {
     type: 'separator',
@@ -31,5 +24,8 @@ export default {
   },
   roadmap: {
     title: 'Roadmap',
+  },
+  faq: {
+    title: 'FAQ',
   },
 }

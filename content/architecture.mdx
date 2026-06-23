@@ -1,0 +1,135 @@
+---
+title: Architecture
+description: Low-level EVM architecture of the Cronstream hook — flash accounting, EIP-1153 transient storage, and the lock-callback state machine.
+---
+
+import { Callout } from 'nextra/components'
+
+# Architecture
+
+## Hook contract structure
+
+Cronstream is a single contract, `CronstreamHook.sol`, inheriting from Uniswap v4's `BaseHook.sol`. A companion library, `TransientAccounting.sol`, contains Yul assembly helpers for all EIP-1153 transient storage operations.
+
+```
+/src
+  CronstreamHook.sol          — master hook implementation
+  libraries/
+    TransientAccounting.sol   — TSTORE/TLOAD assembly wrappers
+/test
+  Cronstream.t.sol            — Foundry unit and integration tests
+/scripts
+  Keeper.ts                   — off-chain keeper automation
+```
+
+## Hook permission flags
+
+Uniswap v4 encodes hook permissions into the hook's deployment address via bitwise flags. Cronstream registers the following callbacks:
+
+| Callback | Purpose |
+|---|---|
+| `afterAddLiquidity` | Record LP address and update liquidity ownership share |
+| `afterRemoveLiquidity` | Scale down LP ownership on position exit |
+| `afterSwap` | Measure fee surplus delta after each swap |
+| `afterDonate` | Detect donated token surplus |
+
+The `getHookPermissions()` function returns the corresponding `Hooks.Permissions` struct with these four flags set to `true` and all others `false`.
+
+## LP ownership matrix
+
+Because the `PoolManager` singleton does not maintain an enumerable registry of LP addresses, Cronstream builds and maintains its own:
+
+```solidity
+// Persistent storage
+mapping(PoolId => mapping(address => uint128)) public lpLiquidity;
+mapping(PoolId => uint128)                     public totalLiquidity;
+mapping(PoolId => address[])                   internal lpList;
+mapping(PoolId => mapping(address => bool))    internal isLP;
+```
+
+When `afterAddLiquidity` fires, the hook writes the LP's delta to `lpLiquidity` and appends the address to `lpList` if it is a new entrant. When `afterRemoveLiquidity` fires, the hook scales down the LP's recorded amount.
+
+Pro-rata share at distribution time is computed as:
+
+```
+lpShare = (lpLiquidity[poolId][lp] × surplusAmount) / totalLiquidity[poolId]
+```
+
+## Transient storage slots
+
+All intra-transaction state — reentrancy locks, gas bookkeeping, and intermediate delta accumulation — is stored in EIP-1153 transient storage (Solidity 0.8.26+, Cancun EVM). These slots cost ~100 gas to write versus 20,000 gas for a cold SSTORE, and are automatically zeroed at the end of each transaction with no explicit cleanup required.
+
+```solidity
+// Custom EIP-1153 transient slot constants
+bytes32 constant REENTRANCY_SLOT   = keccak256("cronstream.reentrancy");
+bytes32 constant INITIAL_GAS_SLOT  = keccak256("cronstream.initial_gas");
+bytes32 constant ACCUMULATED_DELTA = keccak256("cronstream.temp_delta");
+```
+
+The Yul assembly read/write helpers in `TransientAccounting.sol`:
+
+```solidity
+function tStore(bytes32 slot, uint256 value) internal {
+    assembly { tstore(slot, value) }
+}
+
+function tLoad(bytes32 slot) internal view returns (uint256 value) {
+    assembly { value := tload(slot) }
+}
+```
+
+## The lock-callback state machine
+
+The `distributeYield(PoolKey calldata key)` function is the only public entrypoint. Its execution is managed through a strict lock-and-callback sequence enforced by the `PoolManager` singleton.
+
+### Entry
+
+```solidity
+function distributeYield(PoolKey calldata key) external {
+    tStore(REENTRANCY_SLOT, 1);
+    tStore(INITIAL_GAS_SLOT, gasleft());
+    poolManager.unlock(abi.encode(key, tx.origin));
+}
+```
+
+The reentrancy lock is set and the entry gas is recorded in transient storage before the `unlock()` call. The `PoolManager` halts all other external operations and routes control to `unlockCallback`.
+
+### Inside `unlockCallback`
+
+The callback receives the encoded `key` and `keeper` address. It executes the following sequence atomically:
+
+**Step 1 — Surplus isolation.** The hook calls `poolManager.sync(currency0)` to force the `PoolManager` to register any balance increase from token rebases. The resulting positive delta represents the unassigned rebase surplus.
+
+**Step 2 — Delta generation.** `poolManager.take(currency, address(this), surplusAmount)` transfers the surplus tokens to the hook. This creates a negative currency delta (the hook owes the pool).
+
+**Step 3 — Gas calculation.** The hook computes the exact ETH owed to the keeper:
+
+```
+ΔTH = (Gas_start − Gas_end + Ω) × tx.gasprice
+```
+
+Where `Ω` is a constant overhead factor covering post-calculation execution cost. This is calculated using `INITIAL_GAS_SLOT` from transient storage.
+
+**Step 4 — Inline ETH acquisition.** The hook executes an exact-output swap on a pre-configured ETH/stablecoin pool inside the same `PoolManager` session, acquiring the precise ETH amount calculated in Step 3. `poolManager.settle(stablecoin)` balances the stablecoin delta.
+
+**Step 5 — Distribution and settlement.** ETH is transferred to the keeper (`payable(keeper).call{value: ethOwed}("")`). The remaining stablecoin balance is distributed to each LP address in `lpList` proportionally. All currency deltas must equal zero before the callback returns — the `PoolManager` enforces this invariant and reverts the entire transaction if `NonzeroDeltaCount != 0`.
+
+### Exit
+
+When `unlockCallback` returns, `REENTRANCY_SLOT` and all other transient slots are automatically zeroed by the EVM. The keeper's wallet balance has increased by the exact gas cost of the transaction. Each LP's wallet has received their yield share.
+
+<Callout type="info">
+  The entire distribution — surplus isolation, keeper reimbursement, and LP payouts — executes as a single atomic transaction. It either completes in full or reverts entirely. There is no partial distribution state.
+</Callout>
+
+## Deployment targets
+
+Cronstream targets Cancun-active networks that have active RWA ecosystems:
+
+| Network | Chain ID | Status |
+|---|---|---|
+| Base | 8453 | Planned |
+| Arbitrum One | 42161 | Planned |
+| Unichain | TBD | Planned |
+
+All three networks have confirmed Cancun/EIP-1153 support. Deployment to all three is planned as a single coordinated release post-audit.

@@ -1,0 +1,51 @@
+---
+title: The Problem
+description: Why yield-bearing RWAs and rebasing stablecoins lose their distribution mechanism when deployed into Uniswap pools — and what that costs at institutional scale.
+---
+
+import { Callout } from 'nextra/components'
+
+# The Stagnant AMM Float Problem
+
+## Background: the RWA liquidity expansion
+
+Institutional asset managers have spent the last 18 months aggressively moving tokenized Real-World Assets onto public EVM networks. BlackRock's BUIDL, Ondo's USDY, and Mountain Protocol's USDM are not experimental positions — they represent billions of dollars of institutional capital seeking the yield profile of traditional fixed-income instruments combined with the settlement speed and composability of on-chain infrastructure.
+
+To make these assets tradeable at scale, issuers need deep secondary market liquidity. The natural venue is a Uniswap v4 pool. A USDY/USDC pool, for example, gives institutional buyers a reliable execution venue and gives the issuer direct on-chain price discovery.
+
+## Where the mechanism breaks
+
+Every yield-bearing or rebasing asset has a native distribution mechanism. USDY pays daily dividends. USDM rebases supply upward. BUIDL accrues Treasury yield to holders. These mechanisms work correctly when the asset is held in a standard EOA or a smart contract wallet.
+
+They break the moment the asset enters a Uniswap pool.
+
+The Uniswap v4 `PoolManager` is a blind singleton contract. It tracks token balances as static integers mapped to pool state (ticks, liquidity, fee growth). It has no awareness that one of the tokens in a pool has a time-varying balance. When USDY rebases and the `PoolManager`'s actual ERC-20 balance of USDY increases, that surplus sits as an unaccounted delta — it is not attributed to any LP, not distributed, not compounded. It is stranded capital.
+
+<Callout type="warning">
+  A $10M USDY/USDC pool generating 5% annual yield accumulates roughly $500,000 per year in stagnant, undistributed float. At current market growth rates, this is a multi-billion dollar problem across all RWA-backed Uniswap pools.
+</Callout>
+
+## The current recovery path and its failure modes
+
+The only mechanism currently available to recover this yield is a manual off-chain operation:
+
+1. Call a read function to enumerate LP addresses and their liquidity weights at a snapshot block
+2. Calculate each LP's pro-rata share of the accumulated surplus
+3. Execute a batch ERC-20 transfer from a controlled wallet to each LP address
+4. Repeat on a periodic schedule (weekly, monthly)
+
+This approach has three critical failure modes at institutional scale:
+
+**Custody risk.** To execute batch distributions, the operator must hold the yield tokens in a hot wallet between collection and distribution. This creates a direct custodial exposure window — exactly the risk profile institutional compliance teams are required to minimize.
+
+**Regulatory classification.** The SEC, CFTC, and MiCA regulators have begun treating periodic manual yield distribution operations as evidence of a centralized intermediary structure. An asset issuer running a Python script to distribute yield every Friday is functionally operating as a centralized clearinghouse — a classification that triggers licensing requirements, reporting obligations, and legal liability.
+
+**Operational fragility.** The manual process requires correct enumeration of LP addresses at each snapshot, which is unreliable when LP positions change between the snapshot block and the distribution transaction. LPs who added or removed liquidity between these events receive incorrect allocations. There is no on-chain enforcement of the distribution math.
+
+## The market gap
+
+No deployed Uniswap v4 hook currently solves this problem. The Uniswap Foundation's official Request for Hooks (RfH) under the UHI9 "Impermanent Loss & Yield Systems" track explicitly identifies this gap:
+
+> *"Stable-focused hooks handling yield distribution, Liquid Staking/Rebasing optimized hooks, Fee-Smoothing/Reward Aggregator Hooks"*
+
+Cronstream is a direct response to this specification. It replaces the manual off-chain pipeline with an autonomous, atomic, non-custodial settlement primitive deployed directly inside the Uniswap v4 hook architecture.

@@ -1,114 +1,92 @@
 ---
 title: How It Works
-description: The full stream lifecycle, from creation to contractor withdrawal. Understand how CronStream verifies work and controls payment windows.
+description: The five-step Cronstream lifecycle — from LP position tracking to atomic yield distribution and keeper gas reimbursement.
 ---
 
 import { Callout, Steps } from 'nextra/components'
 
 # How It Works
 
-The full stream lifecycle, from creation to contractor withdrawal.
+Cronstream operates as a Uniswap v4 hook attached to a yield-bearing pool. The protocol runs a five-step lifecycle that begins when the first LP deposits and ends when the keeper broadcasts a distribution transaction.
 
-## Stream lifecycle
+## The five-step lifecycle
 
 <Steps>
 
-### Company deposits budget
+### Liquidity range tracking
 
-Full engagement budget locked upfront. Stream opens LOCKED, contractor earns $0.00.
+When an LP adds a position to a Cronstream-attached pool, the `afterAddLiquidity` hook callback fires. The hook records the LP's wallet address, their liquidity delta, and their current ownership fraction relative to total pool liquidity. This data is written to a persistent on-chain mapping — the hook's liquidity ownership matrix.
 
-### Contractor completes work
+When an LP removes or reduces a position, `afterRemoveLiquidity` fires and scales down their recorded share proportionally.
 
-Ships code, closes a ticket, or delivers a design in whichever tool the stream is configured against.
+### Surplus accumulation
 
-### Agent verifies (3-layer check)
+Yield enters the pool through two channels:
 
-Real code diff in `/src` · PR merged by senior engineer · CI/CD passed. All three must pass.
+- **Token rebases.** When USDY or USDM rebases, the `PoolManager`'s actual ERC-20 balance increases above its internally tracked reserves. This unaccounted delta is the rebase surplus.
+- **Swap fees.** Trading activity generates fee income that accumulates inside the pool's fee growth registers.
 
-### Agent signs EIP-712 voucher
+The `afterSwap` and `afterDonate` callbacks measure the current pool token balance against the hook's internal ledger on each swap or donation event, tracking the growing surplus in real time.
 
-Off-chain cryptographic signature with nonce + expiry, replay-proof and time-bounded.
+### Off-chain keeper monitoring
 
-### Stream window opens
+The Cronstream keeper script runs as a lightweight background process. It subscribes to the pool's RPC event stream and queries the pool's token balance delta on each new block. The keeper compares the live balance against the hook's last recorded baseline to calculate the current unassigned yield accumulation.
 
-Contractor earns per second for the verified period. Balance accrues in real time.
+No keeper authorization is required — the entrypoint is fully public.
 
-### Next period, stream re-locks
+### Dollar threshold trigger
 
-Each period requires a new verification. No continuous free flow.
+When accumulated yield crosses a configurable capital efficiency threshold (default: **$1,000 USDC equivalent**), the keeper broadcasts a transaction calling `distributeYield(PoolKey calldata key)` on the hook contract.
+
+The threshold prevents distributions from being uneconomical — a gas-cost-to-yield ratio below the threshold means the keeper's reimbursement would consume a material fraction of the distributed amount, which is undesirable for LPs. The threshold is tunable at deployment.
+
+### Atomic flash settle and push payout
+
+The distribution executes as a single atomic transaction inside a `poolManager.unlock()` session:
+
+1. The hook pulls the yield surplus from the `PoolManager` using `poolManager.take()`
+2. It calculates the exact gas cost of the transaction at runtime using `gasleft()` bookkeeping
+3. It executes an inline exact-output swap on a native ETH/stablecoin pool to acquire the exact ETH needed to reimburse the keeper
+4. It transfers the ETH directly to `tx.origin` (the keeper wallet)
+5. It loops the remaining stablecoin balance and transfers each LP's pro-rata share directly to their wallet via `IERC20.transfer()`
+6. All `PoolManager` currency deltas are settled to zero before the unlock session closes
+
+The `PoolManager` validates that `NonzeroDeltaCount == 0` before accepting the state transition. If any delta is unsettled, the entire transaction reverts.
 
 </Steps>
 
-<Callout type="warning">
-  No work verified? The agent stops signing. The stream expires at its window boundary.
-  Company reclaims every unearned token. No dispute, no gas, no manual cancel.
+## Distribution flow diagram
+
+```
+[ Pool: USDY/USDC ]
+       │
+       │ rebase / swap fees
+       ▼
+[ Cronstream Hook ]
+       │
+       │ distributeYield() triggered by keeper
+       ▼
+[ poolManager.unlock() → unlockCallback() ]
+       │
+       ├──► poolManager.take(surplusAmount)
+       │
+       ├──► inline ETH/USDC swap → reimburse keeper (tx.origin)
+       │         └── ~0.2% of surplus consumed
+       │
+       └──► IERC20.transfer() × N LPs → wallets
+                 └── ~99.8% of surplus distributed
+```
+
+## LP experience
+
+From the LP's perspective, Cronstream is invisible. They deposit into a Uniswap v4 pool in the normal way. At unpredictable intervals — determined by trading volume and rebase frequency — yield arrives directly in their wallet with no action required. There is no claim transaction, no gas cost to the LP, and no dashboard to check.
+
+<Callout type="info">
+  LPs never interact with the Cronstream hook directly. The only user-facing change is that yield appears in their wallet automatically rather than requiring a claim.
 </Callout>
 
-## Key concepts
+## Security model
 
-### Stream ID
+The hook holds no principal funds at any point. All LP liquidity remains inside the `PoolManager` singleton, which is the canonical Uniswap v4 security boundary. The hook only ever handles yield surplus — the delta between the pool's actual token balance and its internally tracked reserves.
 
-Every stream is a `bytes32` identifier, a 0x-prefixed 64-character hex string.
-Emitted in the `StreamCreated` event on creation. Use it as the primary key for all API calls.
-
-### Locked-start model
-
-A stream is born expired, `streamValidUntil = startTime` on creation.
-The contractor earns nothing until the agent verifies the first period and submits a signed voucher on-chain.
-The tap is off by default.
-
-### Extension voucher
-
-An EIP-712 signed message produced by the agent after verification passes.
-
-| Field | Description |
-|---|---|
-| `streamId` | Which stream to extend |
-| `extensionDurationSeconds` | How long to open the window (e.g. 604800 = 7 days) |
-| `nonce` | On-chain nonce, prevents replay attacks |
-| `expiry` | Unix timestamp, voucher is void after this |
-
-### Gap time protection
-
-Dead time between a window expiry and the next re-extension is never counted as earned.
-The contract tracks `earnedSnapshot` and `lastWindowStart` to enforce this.
-
-### Verification sources
-
-| Source | What the agent checks |
-|---|---|
-| `github` | Real code diff in `/src` or `/contracts`, PR merged, CI/CD passed |
-| `jira` | Ticket moved to Done in the correct sprint |
-| `bitbucket` | PR merged with passing pipelines |
-| `figma` | File updated and approved |
-
-### Budget reclaim
-
-After a stream window expires, the company can call `reclaimUnearned()` to recover all
-tokens that have not been earned. Earned-but-not-withdrawn tokens remain available to the contractor.
-The contract enforces this split mathematically.
-
-### Grace periods
-
-Companies cannot reclaim immediately after a stream expires. A grace period gives the contractor
-time to withdraw earned funds before the company can claw back unearned tokens.
-
-| Scenario | Grace period | Clock starts |
-|---|---|---|
-| Frozen stream (was active, window lapsed) | 7 days | `streamValidUntil` |
-| Pending stream (never activated) | 14 days | `startTime` |
-
-### Stream ID routing
-
-Contractors embed their stream ID in commit messages or PR descriptions to route the GitHub
-webhook directly to their stream. This is required when a repo has multiple active streams
-(e.g. two contractors working on the same repository).
-
-Format: one or more lines of:
-
-```
-CronStream-Stream-Id: 0x<64-hex-chars>
-```
-
-Multiple IDs in a single commit message are all processed. The agent verifies and extends each
-matching stream independently.
+Reentrancy is guarded via an EIP-1153 transient storage lock that is set at `distributeYield()` entry and automatically cleared when the transaction frame closes, with zero permanent storage cost.

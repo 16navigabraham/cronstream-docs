@@ -21,11 +21,13 @@ export const metadata = {
     url: 'https://docs.cronstream.xyz',
     siteName: 'Cronstream Docs',
     type: 'website',
+    images: [{ url: 'https://docs.cronstream.xyz/banner.png' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Cronstream Docs',
     description: 'Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
+    images: ['https://docs.cronstream.xyz/banner.png'],
   },
 }
 

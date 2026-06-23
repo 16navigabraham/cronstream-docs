@@ -4,15 +4,19 @@ import './globals.css'
 
 export const metadata = {
   title: {
-    template: '%s – CronStream Docs',
-    default: 'CronStream Docs',
+    template: '%s – Cronstream Docs',
+    default: 'Cronstream Docs',
   },
-  description: 'CronStream API reference and integration guides. Milestone-verified payment streams for contractors and teams.',
+  description: 'Cronstream Protocol — Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
   metadataBase: new URL('https://docs.cronstream.xyz'),
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
   openGraph: {
-    title: 'CronStream Docs',
-    description: 'CronStream API reference and integration guides.',
-    images: '/og-image.svg',
+    title: 'Cronstream Docs',
+    description: 'Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
   },
 }
 

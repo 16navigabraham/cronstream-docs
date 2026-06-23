@@ -1,131 +1,82 @@
-# CronStream Protocol — AI-readable documentation
+# Cronstream Protocol — AI-readable documentation
 # https://docs.cronstream.xyz/llms.txt
-# Last updated: 2026-05-30
 
-## What is CronStream?
+## What is Cronstream?
 
-CronStream is an autonomous, milestone-gated B2B token streaming protocol.
-Money flows to contractors only after an off-chain agent verifies real work:
-a merged pull request, a closed Jira ticket, an approved Figma design.
+Cronstream is a Uniswap v4 hook that automatically distributes yield from Real-World Asset (RWA)
+and rebasing stablecoin pools directly to liquidity providers. When yield-bearing assets like
+USDY, USDM, or BUIDL enter a standard AMM pool, their native dividend and rebase distribution
+mechanisms break. Cronstream intercepts that stagnant yield and pushes it directly to LPs' wallets —
+atomically, without custody, and with zero protocol fee.
 
-It is payroll infrastructure, not a bank. Companies and contractors use CronStream
-directly. Other products and AI agents can integrate via the public API.
+Built for the Atrium Academy Uniswap Hook Incubator (UHI) cohort. Currently in active development.
+Target deployment: Base, Arbitrum One, Unichain.
 
-## Deployed contracts
+## The problem Cronstream solves
 
-| Network           | Chain ID | Contract address                           |
-|-------------------|----------|--------------------------------------------|
-| Arbitrum Sepolia  | 421614   | 0x5A141097BAF8D88f665217817A1f89e1663f0C16 |
-| Robinhood Chain   | 46630    | 0x12B1c71A60CBC3Fdd44D3D974546D2751feC04eD |
+The tokenized RWA market has crossed $31.4 billion in on-chain value. Institutional assets like
+BlackRock BUIDL ($2.4B), Ondo USDY ($2.16B), and Mountain Protocol USDM ($1.1B) generate real yield
+through rebases and dividends. But when these assets enter a Uniswap pool, the PoolManager singleton
+has no awareness of external token rebases — yield accumulates as idle, unassigned float inside the
+pool manager. The only current recovery path is a manual off-chain operation using centralized scripts,
+which introduces custody risk, regulatory classification risk, and operational fragility.
 
-## Stream lifecycle
+## How Cronstream works
 
-1. Company deposits full engagement budget upfront. Stream opens LOCKED. Contractor earns $0.
-2. Contractor ships work — merged PR, closed ticket, or delivered design.
-3. Agent runs a 3-layer check: real code diff in /src or /contracts, PR merged, CI/CD passed.
-4. Agent signs an EIP-712 extension voucher (nonce + expiry, replay-proof).
-5. Stream window opens. Contractor earns per second for the verified period.
-6. At the next period boundary the stream re-locks. No work verified = no payment. Company reclaims every unearned token automatically via reclaimUnearned().
+1. LP deposits RWA pair into Uniswap v4 PoolManager. Cronstream hook indexes their share weight.
+2. RWA rebase events and swap fees generate unassigned token surplus within pool state.
+3. Off-chain keeper monitors pool state via JSON-RPC continuously.
+4. Once unassigned yield crosses a configurable threshold (default $1,000), keeper calls distributeYield().
+5. Atomic flash-accounting transaction: pull surplus via poolManager.take(), execute inline exact-output
+   ETH swap to reimburse keeper gas, push remaining yield directly to all LP wallets via IERC20.transfer().
+   All PoolManager currency deltas settled to zero before unlock session closes.
 
-## Key concepts
+## Core invariants
 
-**Stream ID**: bytes32 identifier, 0x-prefixed 64-character hex string. Emitted in StreamCreated event on creation.
+- Zero custody: hook never holds principal LP funds — all liquidity stays inside PoolManager singleton
+- Gas invariance: keeper wallet fully reimbursed in native ETH within the same transaction block
+- Permissionless trigger: distributeYield() is a fully public entrypoint — no onlyOwner, no access control
+- Zero protocol fee: 0% on distributed yield — protocol funded via ecosystem grants
+- Cancun-native: EIP-1153 transient storage (TSTORE/TLOAD) used throughout for gas optimization
 
-**Locked-start model**: streamValidUntil = startTime on creation. Contractor earns nothing until the agent verifies the first period and submits a signed voucher on-chain.
+## Technical architecture
 
-**Extension voucher fields**:
-- streamId: which stream to extend
-- extensionDurationSeconds: how long to open the window (e.g. 604800 = 7 days)
-- nonce: on-chain nonce, prevents replay attacks
-- expiry: Unix timestamp, voucher is void after this
+Hook contract: CronstreamHook.sol inherits BaseHook.sol (Uniswap v4-periphery)
 
-**Verification sources**:
-- github: real code diff in /src or /contracts, PR merged, CI/CD passed
-- jira: ticket moved to Done in the correct sprint
-- bitbucket: PR merged with passing pipelines
-- figma: file updated and approved
+Hook callbacks registered:
+- afterAddLiquidity: record LP address, update liquidity ownership share
+- afterRemoveLiquidity: scale down LP ownership on position exit
+- afterSwap: measure fee surplus delta after each swap
+- afterDonate: detect donated token surplus
 
-**Stream ID in commit message**: contractors embed CronStream-Stream-Id: 0x<id> in their commit message or PR description to route the webhook directly to their stream. Required when a repo has multiple active streams.
+Transient storage slots (EIP-1153):
+- cronstream.reentrancy — reentrancy lock (1 = locked, 0 = unlocked)
+- cronstream.initial_gas — entry gasleft() for keeper reimbursement calculation
+- cronstream.temp_delta — mid-loop pool balance accumulation
 
-**Budget reclaim**: after a stream window expires, company calls reclaimUnearned() to recover unearned tokens. Earned-but-not-withdrawn tokens remain available to the contractor.
+Gas reimbursement formula: ΔETH = (Gas_start − Gas_end + Ω) × tx.gasprice
+where Ω is a constant overhead factor covering post-calculation execution cost.
 
-**Grace periods**:
-- Frozen stream (was active, window lapsed): 7-day grace after streamValidUntil before company can reclaim
-- Pending stream (never activated): 14-day grace after startTime before company can reclaim
+## Protocol economics
 
-## Public API
+Zero protocol fee — 0% on distributed yield. Funded via:
+- Non-dilutive ecosystem grants (Uniswap Foundation, Arbitrum, Unichain ecosystem funds)
+- Self-funding keeper engine: keeper gas reimbursed inline from yield pool in same block
 
-Base URL: https://api.cronstream.xyz
+## Target networks
 
-The public API uses the x402 pay-per-call protocol. Pay in USDC on Base per request.
-Hit GET /api/public/info first to get live pricing and the current pay-to address.
+- Base (chain ID 8453)
+- Arbitrum One (chain ID 42161)
+- Unichain
 
-| Endpoint                                    | Price  | Description                              |
-|---------------------------------------------|--------|------------------------------------------|
-| GET /api/public/info                        | Free   | Pricing and usage instructions           |
-| GET /api/public/stream/:id                  | $0.01  | Stream state and live balance            |
-| GET /api/public/balance/:id                 | $0.01  | Withdrawable balance                     |
-| GET /api/public/streams/company/:address    | $0.05  | All streams opened by a company          |
-| GET /api/public/streams/contractor/:address | $0.05  | All streams a contractor receives        |
-| POST /api/public/verify-milestone           | $0.10  | Verify work and get signed voucher       |
+## Status
 
-## Quick start (x402)
+Currently in development during UHI cohort. No mainnet deployment yet.
+Testnet deployment and external security audit planned post-cohort.
 
-```bash
-npm install x402-fetch viem
-```
+## Links
 
-```js
-import { wrapFetchWithPayment } from 'x402-fetch';
-import { privateKeyToAccount } from 'viem/accounts';
-
-const account  = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
-const fetch402 = wrapFetchWithPayment(fetch, { account });
-
-const res  = await fetch402('https://api.cronstream.xyz/api/public/balance/0xYOUR_STREAM_ID');
-const data = await res.json();
-
-console.log(data.balance);   // withdrawable amount (raw units, 6 decimals)
-console.log(data.isActive);  // true if stream window is open
-```
-
-## Stream object schema
-
-```json
-{
-  "streamId":           "0x...",
-  "chainId":            421614,
-  "verificationSource": "github",
-  "verificationTarget": "owner/repo",
-  "sender":             "0x...",
-  "recipient":          "0x...",
-  "token":              "0x...",
-  "ratePerSecond":      "1157407407407",
-  "streamValidUntil":   "1748000000",
-  "totalDeposited":     "2000000000",
-  "totalWithdrawn":     "500000000",
-  "nonce":              "3",
-  "balance":            "125000000",
-  "createdAt":          1747000000
-}
-```
-
-All token amounts are in raw units with 6 decimal places (same as USDC).
-
-## Token support
-
-| Symbol | Address (Arbitrum Sepolia)                 | Decimals |
-|--------|--------------------------------------------|----------|
-| USDC   | 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d | 6        |
-| CRM    | 0x2Ca6e6FbAA8D0Bc27a64Ca079aFa6bf5cc8C7ad1 | 6        |
-
-CRM is CronStream's native token. 1 CRM = $1. Claimable from the faucet at https://cronstream.xyz/faucet.
-
-## Contact
-
-Website:  https://cronstream.xyz
-App:      https://cronstream.xyz/app
-Docs:     https://docs.cronstream.xyz
-GitHub:   https://github.com/thecronstream
-X:        https://x.com/cronstream
-Email:    thecronstream@gmail.com
+Docs:    https://docs.cronstream.xyz
+GitHub:  https://github.com/thecronstream/CronStream
+X:       https://x.com/cronstream
+Email:   thecronstream@gmail.com

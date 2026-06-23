@@ -34,7 +34,7 @@ Hooks expand the attack surface relative to a standard Uniswap pool by adding ar
 - **Reentrancy during `unlockCallback`.** Guarded by an EIP-1153 transient storage lock set at `distributeYield()` entry and valid for the transaction's lifetime.
 - **LP list manipulation.** An attacker could attempt to register a large number of LP addresses to inflate gas cost during the distribution loop. Mitigated by minimum liquidity thresholds for inclusion in the `lpList`.
 - **Keeper front-running.** The keeper reimbursement amount is calculated at runtime using `gasleft()`. An attacker who front-runs the distribution transaction gains no advantage — the reimbursement is only transferred to `tx.origin`, not a configurable address.
-- **Inline swap MEV.** The exact-output ETH swap during keeper reimbursement is a potential MEV target. The swap size is small (typically <0.05% of pool liquidity) and is bounded by the keeper gas calculation, limiting MEV exposure.
+- **Inline swap MEV.** The exact-output ETH swap during keeper reimbursement is a potential MEV target. The swap size is small (typically &lt;0.05% of pool liquidity) and is bounded by the keeper gas calculation, limiting MEV exposure.
 
 An external security audit covering all four vectors is a prerequisite for mainnet deployment.
 

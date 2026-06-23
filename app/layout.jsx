@@ -14,7 +14,16 @@ export const metadata = {
     shortcut: '/favicon.png',
     apple: '/favicon.png',
   },
+  keywords: ['Uniswap v4 hook', 'RWA yield distribution', 'rebasing stablecoin', 'USDY', 'USDM', 'BUIDL', 'liquidity provider yield', 'DeFi', 'Base', 'Arbitrum', 'Unichain'],
   openGraph: {
+    title: 'Cronstream Docs',
+    description: 'Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
+    url: 'https://docs.cronstream.xyz',
+    siteName: 'Cronstream Docs',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
     title: 'Cronstream Docs',
     description: 'Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
   },
@@ -39,17 +48,17 @@ export default async function RootLayout({ children }) {
                     width={22}
                     height={22}
                     style={{ borderRadius: 4 }}
-                    alt="CronStream"
+                    alt="Cronstream"
                   />
                   <span style={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-                    CronStream{' '}
+                    Cronstream{' '}
                     <span style={{ fontWeight: 400, opacity: 0.5 }}>Docs</span>
                   </span>
                 </div>
               }
             />
           }
-          footer={<p>CronStream Protocol · Business Source License 1.1</p>}
+          footer={<p>Cronstream Protocol · MIT License</p>}
           feedback={{ content: null }}
           editLink={null}
         >

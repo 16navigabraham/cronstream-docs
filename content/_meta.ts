@@ -12,6 +12,9 @@ export default {
   'how-it-works': {
     title: 'How It Works',
   },
+  'use-cases': {
+    title: 'Use Cases',
+  },
   architecture: {
     title: 'Architecture',
   },

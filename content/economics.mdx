@@ -40,6 +40,16 @@ When the keeper calls `distributeYield()`:
 
 The keeper's net position after every successful distribution call is exactly neutral — gas spent equals ETH received. The keeper operates indefinitely without any external funding source.
 
+### Ecosystem-sponsored gas override
+
+When an ecosystem foundation (Uniswap Foundation, Arbitrum, Base) provides a gas subsidy — via an ERC-4337 paymaster or a pre-funded keeper treasury — Cronstream can skip the inline swap entirely. In this mode:
+
+- No yield tokens are converted to ETH
+- 100% of the captured surplus flows to LPs
+- Transaction costs are absorbed by the sponsoring foundation's paymaster
+
+This is a first-class mode, not a workaround. The protocol is designed so that any foundation-level gas sponsorship immediately converts Cronstream into a pure zero-overhead distribution pipe without any contract changes.
+
 ```
 [ Yield Pool: $10,000 USDC equivalent ]
        │

@@ -28,11 +28,16 @@ Yield enters the pool through two channels:
 
 The `afterSwap` and `afterDonate` callbacks measure the current pool token balance against the hook's internal ledger on each swap or donation event, tracking the growing surplus in real time.
 
-### Off-chain keeper monitoring
+### Reactive smart contract monitoring
 
-The Cronstream keeper script runs as a lightweight background process. It subscribes to the pool's RPC event stream and queries the pool's token balance delta on each new block. The keeper compares the live balance against the hook's last recorded baseline to calculate the current unassigned yield accumulation.
+`distributeYield()` is a fully public, permissionless entrypoint — any address can call it. The caller receives exact gas reimbursement from the yield pool inline, making the protocol self-sustaining regardless of who triggers it.
 
-No keeper authorization is required — the entrypoint is fully public.
+In practice, Cronstream deploys a [Reactive Network](https://reactive.network) smart contract as its primary automation client. Instead of a centralized off-chain script, the Reactive contract monitors the pool's on-chain balance delta autonomously and calls `distributeYield()` the moment the threshold is crossed — with no human intervention and no server required. The callback payload includes an execution flag that determines how gas is settled:
+
+- **Standard mode (flag 0):** The hook runs the inline exact-output ETH swap and reimburses the Reactive relayer from the yield pool.
+- **Sponsored mode (flag 1):** If an ecosystem foundation has pre-funded a Reactive relayer treasury or paymaster, the swap is skipped and 100% of yield flows to LPs.
+
+Because the entrypoint has no access control, the Reactive contract is not a dependency — any keeper, bot, or LP can trigger a distribution independently if needed.
 
 ### Dollar threshold trigger
 

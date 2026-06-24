@@ -5,6 +5,9 @@ export default {
   problem: {
     title: 'The Problem',
   },
+  'why-cronstream': {
+    title: 'Why Cronstream',
+  },
   '-- protocol': {
     type: 'separator',
     title: 'Protocol',

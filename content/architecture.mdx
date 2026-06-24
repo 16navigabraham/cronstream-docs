@@ -28,12 +28,38 @@ Uniswap v4 encodes hook permissions into the hook's deployment address via bitwi
 
 | Callback | Purpose |
 |---|---|
+| `beforeInitialize` | Pool authorization gate — rejects any pool not on the whitelist |
 | `afterAddLiquidity` | Record LP address and update liquidity ownership share |
 | `afterRemoveLiquidity` | Scale down LP ownership on position exit |
 | `afterSwap` | Measure fee surplus delta after each swap |
 | `afterDonate` | Detect donated token surplus |
 
-The `getHookPermissions()` function returns the corresponding `Hooks.Permissions` struct with these four flags set to `true` and all others `false`.
+The `getHookPermissions()` function returns the corresponding `Hooks.Permissions` struct with these flags set to `true` and all others `false`.
+
+## Pool authorization
+
+In Uniswap v4, any address can deploy a pool that references a given hook contract. Without a guard, a malicious actor could bind Cronstream to a spam or illiquid pool — polluting the keeper's event feed and creating exploitable edge cases in the inline swap.
+
+`beforeInitialize` acts as an access control gate. Only pools explicitly registered by the protocol administrator are permitted to bind to the hook:
+
+```solidity
+mapping(PoolId => bool) public isAuthorizedPool;
+
+function authorizePool(PoolKey calldata key) external onlyOwner {
+    isAuthorizedPool[key.toId()] = true;
+}
+
+function beforeInitialize(address, PoolKey calldata key, uint160)
+    external
+    override
+    returns (bytes4)
+{
+    require(isAuthorizedPool[key.toId()], "Cronstream: POOL_NOT_AUTHORIZED");
+    return BaseHook.beforeInitialize.selector;
+}
+```
+
+This limits Cronstream's operational scope to a curated registry of institutional-grade asset pools (BUIDL, USDY, USDM, sUSDai) and eliminates the griefing surface entirely. New pools are added by the administrator after off-chain diligence on token contract behavior and liquidity depth.
 
 ## LP ownership matrix
 
@@ -121,6 +147,35 @@ When `unlockCallback` returns, `REENTRANCY_SLOT` and all other transient slots a
 <Callout type="info">
   The entire distribution — surplus isolation, keeper reimbursement, and LP payouts — executes as a single atomic transaction. It either completes in full or reverts entirely. There is no partial distribution state.
 </Callout>
+
+## Reactive Network keeper
+
+The `distributeYield()` entrypoint carries no access control — it is fully public. Any address that calls it receives exact gas reimbursement from the yield pool, making the protocol infrastructure-neutral by design.
+
+Cronstream's primary automation client is a Reactive smart contract deployed on [Reactive Network](https://reactive.network) — a decentralized event-driven execution layer that monitors on-chain state and autonomously triggers cross-chain callbacks. The Reactive contract is not a gatekeeper; it is the reference keeper implementation. If it were offline, any other caller could trigger distributions without protocol-level changes.
+
+### What the Reactive contract does
+
+The Reactive contract subscribes to the target pool's event stream. On each new block it reads the pool's token balance and computes the delta against the hook's last recorded baseline. When the accumulated yield crosses the configured threshold, the Reactive contract emits a cross-chain callback transaction that calls `distributeYield(PoolKey calldata key)` on the hook.
+
+This eliminates the need for any centralized server, cron job, or keeper wallet management. The entire trigger-and-execute sequence runs autonomously on-chain.
+
+### Execution flag
+
+The callback payload includes an execution flag that controls how the gas cost is settled:
+
+```
+flag = 0  →  Standard mode: inline ETH swap reimburses the Reactive relayer
+flag = 1  →  Sponsored mode: swap skipped, 100% of yield distributed to LPs
+```
+
+In sponsored mode, transaction costs are absorbed by a pre-funded Reactive Network relayer treasury or an ERC-4337 paymaster provided by an ecosystem foundation (Uniswap Foundation, Arbitrum, Base). No contract changes are required to switch between modes — the flag is passed at call time.
+
+### Slippage ceiling
+
+Before emitting the callback, the Reactive contract checks a live oracle price for the yield token. If the inline ETH swap would require consuming more yield tokens than a configured maximum input ceiling — a signal that the ETH pool is being manipulated or is illiquid at that moment — the Reactive contract does not emit the callback. The distribution is deferred to the next block rather than executing at an adverse price.
+
+This protects LP funds from sandwich attacks on the keeper reimbursement swap without requiring any on-hook price oracle logic.
 
 ## Deployment targets
 

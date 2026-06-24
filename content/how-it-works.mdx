@@ -28,20 +28,19 @@ Yield enters the pool through two channels:
 
 The `afterSwap` and `afterDonate` callbacks measure the current pool token balance against the hook's internal ledger on each swap or donation event, tracking the growing surplus in real time.
 
-### Reactive smart contract monitoring
+### Off-chain keeper automation
 
 `distributeYield()` is a fully public, permissionless entrypoint - any address can call it. The caller receives exact gas reimbursement from the yield pool inline, making the protocol self-sustaining regardless of who triggers it.
 
-In practice, Cronstream deploys a [Reactive Network](https://reactive.network) smart contract as its primary automation client. Instead of a centralized off-chain script, the Reactive contract monitors the pool's on-chain balance delta autonomously and calls `distributeYield()` the moment the threshold is crossed - with no human intervention and no server required. The callback payload includes an execution flag that determines how gas is settled:
+Cronstream runs a lightweight Node.js keeper service as its primary automation client. The keeper subscribes to the pool's event stream via WebSocket RPC (`ethers.js` / `viem`), monitors the pool's yield balance on each new block, and autonomously signs and submits a `distributeYield()` transaction from its EOA wallet when the threshold is crossed.
 
-- **Standard mode (flag 0):** The hook runs the inline exact-output ETH swap and reimburses the Reactive relayer from the yield pool.
-- **Sponsored mode (flag 1):** If an ecosystem foundation has pre-funded a Reactive relayer treasury or paymaster, the swap is skipped and 100% of yield flows to LPs.
+The keeper spends native ETH to call the function. The hook's `gasleft()` calculation computes the exact runtime cost and reimburses the keeper's EOA in the same atomic transaction. The keeper's wallet is self-funding: no external treasury, no secondary token balance.
 
-Because the entrypoint has no access control, the Reactive contract is not a dependency - any keeper, bot, or LP can trigger a distribution independently if needed.
+If the primary keeper is offline, any other caller - an MEV searcher, another bot, the asset issuer - can call `distributeYield()` and collect the same gas reimbursement. The protocol does not stop.
 
 ### Token unit threshold trigger
 
-When accumulated surplus crosses a configurable raw token threshold, the Reactive contract calls `distributeYield(PoolKey calldata key)` on the hook.
+When accumulated surplus crosses a configurable raw token threshold, the keeper calls `distributeYield(PoolKey calldata key)` on the hook.
 
 Thresholds are defined in **native token units** - for example, `1_000e6` USDC or `0.1e18` WETH - not in USD value. This is a deliberate design choice:
 

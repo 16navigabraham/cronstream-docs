@@ -21,7 +21,7 @@ Active development phase. All work targets a local Foundry environment against f
 | Transient storage library | `TransientAccounting.sol` Yul assembly wrappers for EIP-1153 slots | In progress |
 | Flash accounting | `distributeYield()` → `unlockCallback()` lock-callback state machine | In progress |
 | Inline gas reimbursement | Exact-output ETH swap + `tx.origin` transfer within unlock session | In progress |
-| Reactive keeper | `YieldReactiveKeeper.sol` deployed on Reactive Network testnet - autonomous threshold monitoring and cross-chain callback | In progress |
+| Keeper service | Node.js keeper (`Keeper.ts`) running an EOA wallet - WebSocket pool monitoring, threshold detection, and autonomous `distributeYield()` submission | In progress |
 | Foundry test suite | Mock RWA rebase tokens, keeper simulation, pro-rata distribution assertions | In progress |
 | Hookathon submission | UHI Demo Day - live Foundry terminal execution against forked mainnet | Target: cohort end |
 
@@ -34,7 +34,7 @@ Post-cohort. Grant sourcing happens before testnet deployment to fund the audit 
 | Ecosystem grant applications | Uniswap Foundation Hook Grants, Arbitrum developer grants, Base Ecosystem Fund - non-dilutive capital targeting $50k+ for audit and deployment |
 | Multi-sig setup | Secure multi-signature admin layout for pool whitelist governance |
 | Testnet deployment | Hook deployed against Uniswap v4 on Base Sepolia, Arbitrum Sepolia, and Unichain testnet |
-| Mock RWA pool | USDY/USDC testnet pool with simulated rebase events and live Reactive keeper |
+| Mock RWA pool | USDY/USDC testnet pool with simulated rebase events and live keeper node |
 | External security audit | Tier-1 firm audit (Spearbit or equivalent) covering flash accounting, transient storage reentrancy, LP matrix manipulation, keeper swap MEV exposure |
 
 <Callout type="warning">
@@ -61,7 +61,7 @@ Post-audit. Coordinated deployment across Base, Arbitrum One, and Unichain - inv
 | USDY/USDC pool | Ondo Finance integration |
 | USYC/USDC pool | Hashnote integration |
 | BUIDL pool | BlackRock BUIDL - pending issuer cooperation and API access |
-| Reactive keeper production | Live `YieldReactiveKeeper.sol` handling autonomous distribution triggers across all whitelisted pools |
+| Keeper service production | Live `Keeper.ts` node handling autonomous distribution triggers across all whitelisted pools on Base, Arbitrum One, and Unichain |
 
 Each asset issuer goes through an off-chain diligence process before their pool ID is added to the whitelist - token contract behavior, liquidity depth, rebase mechanism, and compliance posture are verified before `authorizePool()` is called.
 
@@ -107,7 +107,7 @@ Both are post-mainnet. The hook ships first.
 | Technical documentation | Complete |
 | Foundry development environment | Active |
 | `CronstreamHook.sol` | In development |
-| `YieldReactiveKeeper.sol` | In development |
+| `Keeper.ts` (Node.js keeper service) | In development |
 | Testnet deployment | Roadmap |
 | External audit | Roadmap |
 | Mainnet deployment | Roadmap |

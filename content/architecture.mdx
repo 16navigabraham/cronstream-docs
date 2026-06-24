@@ -175,34 +175,48 @@ for (uint256 i = 0; i < lpList.length; i++) {
 
 If a transfer fails, the yield is parked in `escrowedYield` for that address. The LP can resolve their compliance status and pull the escrowed amount separately. Every other LP in the pool receives their distribution without interruption. The `MINIMUM_LIQUIDITY` threshold also prevents dust positions from bloating the `lpList` and inflating gas cost.
 
-## Reactive Network keeper
+## Off-chain keeper
 
 The `distributeYield()` entrypoint carries no access control - it is fully public. Any address that calls it receives exact gas reimbursement from the yield pool, making the protocol infrastructure-neutral by design.
 
-Cronstream's primary automation client is a Reactive smart contract deployed on [Reactive Network](https://reactive.network) - a decentralized event-driven execution layer that monitors on-chain state and autonomously triggers cross-chain callbacks. The Reactive contract is not a gatekeeper; it is the reference keeper implementation. If it were offline, any other caller could trigger distributions without protocol-level changes.
+Cronstream's primary automation client is a Node.js keeper service running an EOA wallet on each target network. It subscribes to pool events via WebSocket RPC (`ethers.js` / `viem`), monitors the pool's yield balance, and autonomously submits `distributeYield()` transactions when the threshold is crossed.
 
-### What the Reactive contract does
+### Gas self-funding loop
 
-The Reactive contract subscribes to the target pool's event stream. On each new block it reads the pool's token balance and computes the delta against the hook's last recorded baseline. When the accumulated yield crosses the configured threshold, the Reactive contract emits a cross-chain callback transaction that calls `distributeYield(PoolKey calldata key)` on the hook.
+The keeper requires no external treasury beyond a standard ETH operational float. When it calls `distributeYield()`:
 
-This eliminates the need for any centralized server, cron job, or keeper wallet management. The entire trigger-and-execute sequence runs autonomously on-chain.
+1. It spends native ETH to submit the transaction
+2. The hook's `gasleft()` calculation computes the exact runtime gas cost
+3. The hook executes an inline exact-output swap to acquire the precise ETH amount
+4. The ETH is transferred to `tx.origin` (the keeper's EOA) in the same transaction
 
-### Execution flag
+The keeper wallet is fully reimbursed within the same block. The slight overhead factor `Ω` in the gas formula means the keeper accumulates a small net surplus over time.
 
-The callback payload includes an execution flag that controls how the gas cost is settled:
+### Why not a cross-chain reactive contract?
 
-```
-flag = 0  →  Standard mode: inline ETH swap reimburses the Reactive relayer
-flag = 1  →  Sponsored mode: swap skipped, 100% of yield distributed to LPs
-```
+Cronstream evaluated deploying a Reactive Network smart contract as the automation layer. Three structural incompatibilities ruled it out:
 
-In sponsored mode, transaction costs are absorbed by a pre-funded Reactive Network relayer treasury or an ERC-4337 paymaster provided by an ecosystem foundation (Uniswap Foundation, Arbitrum, Base). No contract changes are required to switch between modes - the flag is passed at call time.
+**1. The gas refund paradox.** Cronstream's `gasleft()` mechanism calculates the exact ETH owed to the caller and transfers it to `tx.origin` inline. If a cross-chain relayer proxy is the entity calling `distributeYield()`, the relayer contract address becomes `tx.origin`. Cross-chain relayer proxies are not designed to absorb arbitrary ERC-20 or native token payouts mid-transaction - the refund is trapped or rejected, and the self-funding loop breaks.
 
-### Slippage ceiling
+**2. Secondary token dependency.** Keeping a Reactive Network contract operational requires maintaining a balance of REACT tokens on the Reactive chain to pay for cross-chain message passing. This introduces a second operational token, a separate funding pipeline, and a failure mode - insufficient REACT balance - that has nothing to do with the protocol's yield distribution logic.
 
-Before emitting the callback, the Reactive contract checks a live oracle price for the yield token. If the inline ETH swap would require consuming more yield tokens than a configured maximum input ceiling - a signal that the ETH pool is being manipulated or is illiquid at that moment - the Reactive contract does not emit the callback. The distribution is deferred to the next block rather than executing at an adverse price.
+**3. Non-deterministic latency.** Cross-chain consensus queues and bridge settlement introduce variable latency between a rebase event and the distribution call. A local WebSocket subscriber responds within the same block the threshold is crossed.
 
-This protects LP funds from sandwich attacks on the keeper reimbursement swap without requiring any on-hook price oracle logic.
+The Node.js keeper eliminates all three issues. Gas refunds land directly in the keeper's EOA. The keeper spends native ETH on the destination chain and immediately recovers it. RPC monitoring has no multi-chain intermediaries.
+
+### Sponsored mode
+
+When an ecosystem foundation covers keeper costs via a paymaster or pre-funded relayer:
+
+- The keeper calls `distributeYield()` with `sponsored = true`
+- The inline ETH swap is skipped entirely
+- 100% of yield flows directly to LPs with no swap overhead
+
+No contract changes required - the mode is a call-time parameter.
+
+### Permissionless fallback
+
+None of this changes Cronstream's permissionless properties. `distributeYield()` has no `onlyKeeper` modifier. Any caller - an MEV searcher, the asset issuer, another bot - can call it at any time and collect the gas reimbursement. The keeper is the reference client, not a gatekeeper. If it goes offline, distributions continue uninterrupted via open market execution.
 
 ## Deployment targets
 

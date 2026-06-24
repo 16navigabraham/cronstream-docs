@@ -46,9 +46,9 @@ Cronstream funds development and operations through ecosystem grants from the Un
 
 ## Why SSTORE-based hooks fail at scale
 
-A yield distribution hook that tracks intra-transaction state using permanent EVM storage (`SSTORE`) pays approximately 20,000 gas for every cold storage write and 2,900 gas for every warm write. In a distribution over 50 LP positions, this becomes a meaningful per-call overhead that scales linearly with pool participation.
+A yield distribution hook that tracks intra-transaction state using permanent EVM storage (`SSTORE`) pays approximately [20,000 gas for every cold storage write and 2,900 gas for every warm write](https://eips.ethereum.org/EIPS/eip-2929). In a distribution over 50 LP positions, this becomes a meaningful per-call overhead that scales linearly with pool participation.
 
-Cronstream uses EIP-1153 transient storage (`TSTORE`) for all intra-transaction state — reentrancy locks, gas bookkeeping, and intermediate delta accumulation. `TSTORE` costs ~100 gas per write and is automatically zeroed at the end of each transaction with no explicit cleanup. The gas efficiency moat is roughly 200× on cold writes.
+Cronstream uses [EIP-1153](https://eips.ethereum.org/EIPS/eip-1153) transient storage (`TSTORE`) for all intra-transaction state — reentrancy locks, gas bookkeeping, and intermediate delta accumulation. `TSTORE` costs ~100 gas per write and is automatically zeroed at the end of each transaction with no explicit cleanup. The gas efficiency moat is roughly 200× on cold writes.
 
 Beyond cost, SSTORE-based hooks require the hook to maintain persistent storage across transactions for intermediate accounting state. This creates a category of bugs — partial state from a failed transaction contaminating the next — that transient storage eliminates by design. If a distribution reverts, every `TSTORE` slot resets to zero automatically.
 

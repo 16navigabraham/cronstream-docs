@@ -22,7 +22,7 @@ They break the moment the asset enters a Uniswap pool.
 The Uniswap v4 `PoolManager` is a blind singleton contract. It tracks token balances as static integers mapped to pool state (ticks, liquidity, fee growth). It has no awareness that one of the tokens in a pool has a time-varying balance. When USDY rebases and the `PoolManager`'s actual ERC-20 balance of USDY increases, that surplus sits as an unaccounted delta — it is not attributed to any LP, not distributed, not compounded. It is stranded capital.
 
 <Callout type="warning">
-  A $10M USDY/USDC pool generating 5% annual yield accumulates roughly $500,000 per year in stagnant, undistributed float. At current market growth rates, this is a multi-billion dollar problem across all RWA-backed Uniswap pools.
+  A $10M USDY/USDC pool at [USDY's current 4.65% APY](https://ondo.finance/usdy) accumulates roughly $465,000 per year in stagnant, undistributed float. At current market growth rates, this is a multi-billion dollar problem across all RWA-backed Uniswap pools.
 </Callout>
 
 ## The current recovery path and its failure modes

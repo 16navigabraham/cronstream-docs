@@ -1,6 +1,6 @@
 ---
 title: Why Cronstream
-description: How Cronstream compares to alternative hook approaches for RWA yield distribution — auto-compounding, fee-extracting, and SSTORE-based designs.
+description: How Cronstream compares to alternative hook approaches for RWA yield distribution - auto-compounding, fee-extracting, and SSTORE-based designs.
 ---
 
 import { Callout } from 'nextra/components'
@@ -26,35 +26,35 @@ Auto-compounding sounds efficient: take the yield surplus, convert it into liqui
 
 It is the wrong answer for every institution that Cronstream targets.
 
-A treasury operations desk at a fund holding BUIDL or USDY liquidity positions cannot book an automatically increased LP share as income. Under IFRS 9 and US GAAP, the realized yield must arrive as a discrete, identified cash transfer to a controlled wallet — not as an on-chain position size increase that requires a separate exit transaction to realize. The accounting team cannot report unrealized auto-compounded LP shares to a compliance officer as the quarter's yield income.
+A treasury operations desk at a fund holding BUIDL or USDY liquidity positions cannot book an automatically increased LP share as income. Under IFRS 9 and US GAAP, the realized yield must arrive as a discrete, identified cash transfer to a controlled wallet - not as an on-chain position size increase that requires a separate exit transaction to realize. The accounting team cannot report unrealized auto-compounded LP shares to a compliance officer as the quarter's yield income.
 
-Institutional LP yield must hit a wallet as a cash equivalent. Cronstream pushes yield in exactly this form — `IERC20.transfer()` to each LP's registered address, with no action required from the LP.
+Institutional LP yield must hit a wallet as a cash equivalent. Cronstream pushes yield in exactly this form - `IERC20.transfer()` to each LP's registered address, with no action required from the LP.
 
 <Callout type="info">
-  The distinction is: **push yield** (Cronstream) vs **grow position** (auto-compound). For retail, auto-compound is superior. For an institutional treasury, push yield is not a preference — it is a compliance requirement.
+  The distinction is: **push yield** (Cronstream) vs **grow position** (auto-compound). For retail, auto-compound is superior. For an institutional treasury, push yield is not a preference - it is a compliance requirement.
 </Callout>
 
 ## Why fee-extracting hooks fail institutions
 
-A hook that charges a performance fee on distributed yield — say, 1% of every distribution — appears commercially rational. Development costs money, and 1% of a billion-dollar TVL pool is real revenue.
+A hook that charges a performance fee on distributed yield - say, 1% of every distribution - appears commercially rational. Development costs money, and 1% of a billion-dollar TVL pool is real revenue.
 
-The problem is that this model is trivially forkable. Any asset issuer sophisticated enough to deploy tokenized Treasuries is sophisticated enough to read a Solidity contract. They can identify the fee line, deploy a zero-fee copy of the hook, and redirect their pool to the fork in one transaction. The original protocol retains no network effect — the institutional LP immediately migrates to the fork because they receive 100% of yield instead of 99%.
+The problem is that this model is trivially forkable. Any asset issuer sophisticated enough to deploy tokenized Treasuries is sophisticated enough to read a Solidity contract. They can identify the fee line, deploy a zero-fee copy of the hook, and redirect their pool to the fork in one transaction. The original protocol retains no network effect - the institutional LP immediately migrates to the fork because they receive 100% of yield instead of 99%.
 
 A 0% fee eliminates this attack vector. There is nothing to strip out of the codebase. The protocol cannot be improved by forking it.
 
-Cronstream funds development and operations through ecosystem grants from the Uniswap Foundation, Arbitrum, and Base — programs that exist precisely to fund non-extractive infrastructure with demonstrated TVL impact.
+Cronstream funds development and operations through ecosystem grants from the Uniswap Foundation, Arbitrum, and Base - programs that exist precisely to fund non-extractive infrastructure with demonstrated TVL impact.
 
 ## Why SSTORE-based hooks fail at scale
 
 A yield distribution hook that tracks intra-transaction state using permanent EVM storage (`SSTORE`) pays approximately [20,000 gas for every cold storage write and 2,900 gas for every warm write](https://eips.ethereum.org/EIPS/eip-2929). In a distribution over 50 LP positions, this becomes a meaningful per-call overhead that scales linearly with pool participation.
 
-Cronstream uses [EIP-1153](https://eips.ethereum.org/EIPS/eip-1153) transient storage (`TSTORE`) for all intra-transaction state — reentrancy locks, gas bookkeeping, and intermediate delta accumulation. `TSTORE` costs ~100 gas per write and is automatically zeroed at the end of each transaction with no explicit cleanup. The gas efficiency moat is roughly 200× on cold writes.
+Cronstream uses [EIP-1153](https://eips.ethereum.org/EIPS/eip-1153) transient storage (`TSTORE`) for all intra-transaction state - reentrancy locks, gas bookkeeping, and intermediate delta accumulation. `TSTORE` costs ~100 gas per write and is automatically zeroed at the end of each transaction with no explicit cleanup. The gas efficiency moat is roughly 200× on cold writes.
 
-Beyond cost, SSTORE-based hooks require the hook to maintain persistent storage across transactions for intermediate accounting state. This creates a category of bugs — partial state from a failed transaction contaminating the next — that transient storage eliminates by design. If a distribution reverts, every `TSTORE` slot resets to zero automatically.
+Beyond cost, SSTORE-based hooks require the hook to maintain persistent storage across transactions for intermediate accounting state. This creates a category of bugs - partial state from a failed transaction contaminating the next - that transient storage eliminates by design. If a distribution reverts, every `TSTORE` slot resets to zero automatically.
 
 ## Why pull-based claim models fail operations
 
-Some hook designs require LPs to call a `claimYield()` function themselves to receive their yield — a pull model. This transfers the gas cost to the LP and introduces an operational dependency: the LP must monitor yield accumulation and submit a transaction to claim it.
+Some hook designs require LPs to call a `claimYield()` function themselves to receive their yield - a pull model. This transfers the gas cost to the LP and introduces an operational dependency: the LP must monitor yield accumulation and submit a transaction to claim it.
 
 For institutional fund operations, this creates an overhead problem. A portfolio manager holding positions across 12 different pools cannot monitor 12 separate yield claim interfaces and submit transactions on a rotating schedule. The operational burden does not scale.
 
@@ -64,9 +64,9 @@ Cronstream is exclusively push-based. When the distribution threshold is crossed
 
 No alternative hook design satisfies all four institutional requirements simultaneously:
 
-1. **Push yield as cash** — not compounded LP shares, not a claim interface
-2. **Zero rent extraction** — no performance fee, no vampire fork surface
-3. **Gas-efficient settlement** — EIP-1153 transient storage, not SSTORE
-4. **Permissioned pool binding** — `beforeInitialize` whitelist prevents spam pool attachment
+1. **Push yield as cash** - not compounded LP shares, not a claim interface
+2. **Zero rent extraction** - no performance fee, no vampire fork surface
+3. **Gas-efficient settlement** - EIP-1153 transient storage, not SSTORE
+4. **Permissioned pool binding** - `beforeInitialize` whitelist prevents spam pool attachment
 
 Cronstream is designed around these four constraints as non-negotiable invariants, not features to be traded off against each other.

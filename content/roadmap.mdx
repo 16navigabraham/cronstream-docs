@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-description: Cronstream development phases — from UHI cohort implementation through audit, mainnet launch, and long-term ecosystem maintenance.
+description: Cronstream development phases - from UHI cohort implementation through audit, mainnet launch, and long-term ecosystem maintenance.
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,29 +9,29 @@ import { Callout } from 'nextra/components'
 
 Cronstream is in active development. The roadmap is sequenced around four hard constraints: correct implementation, external verification, institutional onboarding, and long-term operational sustainability.
 
-## Phase 1 — Architecture, hardening & verification (UHI Cohort)
+## Phase 1 - Architecture, hardening & verification (UHI Cohort)
 
 Active development phase. All work targets a local Foundry environment against forked mainnet state.
 
 | Milestone | Description | Status |
 |---|---|---|
 | Hook scaffolding | `CronstreamHook.sol` inheriting `BaseHook.sol`, correct permission flags | In progress |
-| Pool authorization | `beforeInitialize` whitelist firewall — rejects unauthorized pool binding | In progress |
+| Pool authorization | `beforeInitialize` whitelist firewall - rejects unauthorized pool binding | In progress |
 | LP ownership matrix | `afterAddLiquidity` / `afterRemoveLiquidity` tracking with persistent storage | In progress |
 | Transient storage library | `TransientAccounting.sol` Yul assembly wrappers for EIP-1153 slots | In progress |
 | Flash accounting | `distributeYield()` → `unlockCallback()` lock-callback state machine | In progress |
 | Inline gas reimbursement | Exact-output ETH swap + `tx.origin` transfer within unlock session | In progress |
-| Reactive keeper | `YieldReactiveKeeper.sol` deployed on Reactive Network testnet — autonomous threshold monitoring and cross-chain callback | In progress |
+| Reactive keeper | `YieldReactiveKeeper.sol` deployed on Reactive Network testnet - autonomous threshold monitoring and cross-chain callback | In progress |
 | Foundry test suite | Mock RWA rebase tokens, keeper simulation, pro-rata distribution assertions | In progress |
-| Hookathon submission | UHI Demo Day — live Foundry terminal execution against forked mainnet | Target: cohort end |
+| Hookathon submission | UHI Demo Day - live Foundry terminal execution against forked mainnet | Target: cohort end |
 
-## Phase 2 — Foundation grants & external audit
+## Phase 2 - Foundation grants & external audit
 
-Post-cohort. Grant sourcing happens before testnet deployment to fund the audit — not after.
+Post-cohort. Grant sourcing happens before testnet deployment to fund the audit - not after.
 
 | Milestone | Description |
 |---|---|
-| Ecosystem grant applications | Uniswap Foundation Hook Grants, Arbitrum developer grants, Base Ecosystem Fund — non-dilutive capital targeting $50k+ for audit and deployment |
+| Ecosystem grant applications | Uniswap Foundation Hook Grants, Arbitrum developer grants, Base Ecosystem Fund - non-dilutive capital targeting $50k+ for audit and deployment |
 | Multi-sig setup | Secure multi-signature admin layout for pool whitelist governance |
 | Testnet deployment | Hook deployed against Uniswap v4 on Base Sepolia, Arbitrum Sepolia, and Unichain testnet |
 | Mock RWA pool | USDY/USDC testnet pool with simulated rebase events and live Reactive keeper |
@@ -49,25 +49,25 @@ Audit scope:
 - `beforeInitialize` whitelist bypass attempts
 - Edge cases: zero LP count, single LP, pool with no registered surplus
 
-## Phase 3 — Curated institutional pilot (Mainnet)
+## Phase 3 - Curated institutional pilot (Mainnet)
 
-Post-audit. Coordinated deployment across Base, Arbitrum One, and Unichain — invitation-only pool onboarding via the `beforeInitialize` whitelist.
+Post-audit. Coordinated deployment across Base, Arbitrum One, and Unichain - invitation-only pool onboarding via the `beforeInitialize` whitelist.
 
 | Milestone | Description |
 |---|---|
 | Mainnet deployment | Simultaneous deployment to Base, Arbitrum One, and Unichain |
 | DevRel and integration tooling | Foundry deployment scripts and migration SDK for asset issuers transitioning liquidity from existing pools to Cronstream-enabled pools |
-| sUSDai/USDC pool | Permian Labs integration — first live Cronstream pool |
+| sUSDai/USDC pool | Permian Labs integration - first live Cronstream pool |
 | USDY/USDC pool | Ondo Finance integration |
 | USYC/USDC pool | Hashnote integration |
-| BUIDL pool | BlackRock BUIDL — pending issuer cooperation and API access |
+| BUIDL pool | BlackRock BUIDL - pending issuer cooperation and API access |
 | Reactive keeper production | Live `YieldReactiveKeeper.sol` handling autonomous distribution triggers across all whitelisted pools |
 
-Each asset issuer goes through an off-chain diligence process before their pool ID is added to the whitelist — token contract behavior, liquidity depth, rebase mechanism, and compliance posture are verified before `authorizePool()` is called.
+Each asset issuer goes through an off-chain diligence process before their pool ID is added to the whitelist - token contract behavior, liquidity depth, rebase mechanism, and compliance posture are verified before `authorizePool()` is called.
 
-Because Uniswap v4 hook binding is immutable, asset issuers with existing pools must initialize a new pool and migrate liquidity. Cronstream's DevRel function handles this transition end-to-end — providing deployment scripts, migration tooling, and direct integration support so issuers do not need to read hook lifecycle documentation to get started.
+Because Uniswap v4 hook binding is immutable, asset issuers with existing pools must initialize a new pool and migrate liquidity. Cronstream's DevRel function handles this transition end-to-end - providing deployment scripts, migration tooling, and direct integration support so issuers do not need to read hook lifecycle documentation to get started.
 
-## Phase 4 — Sponsored gas & maintenance operations
+## Phase 4 - Sponsored gas & maintenance operations
 
 Continuous infrastructure scaling. This phase converts Cronstream from a bootstrapped protocol into a formally maintained public good.
 
@@ -75,10 +75,10 @@ Continuous infrastructure scaling. This phase converts Cronstream from a bootstr
 |---|---|
 | Paymaster integration | Apply for L2 gas paymaster programs (Base, Arbitrum, Unichain). Toggle sponsored mode (flag 1) to route 100% of yield directly to LPs with zero inline swap overhead |
 | Whitelist governance | Ongoing review and onboarding of new RWA asset issuers applying to integrate with the hook |
-| Ecosystem retainer | Formal integration as a retained contributor within the Uniswap developer ecosystem — continuous maintenance, EVM upgrade compatibility, and protocol governance participation |
+| Ecosystem retainer | Formal integration as a retained contributor within the Uniswap developer ecosystem - continuous maintenance, EVM upgrade compatibility, and protocol governance participation |
 | Upgrade path | EVM execution standard upgrades (e.g., future Ethereum hardforks) applied without disrupting live pools |
 
-## Phase 5 — Broader asset issuer integrations
+## Phase 5 - Broader asset issuer integrations
 
 Long-term track. Direct integration partnerships with RWA asset issuers to make Cronstream the default yield distribution layer for their Uniswap pools.
 
@@ -88,6 +88,16 @@ Each integration gives the issuer:
 - LP acquisition advantage vs. pools without automated distribution
 
 Target issuers: Ondo Finance (USDY), Hashnote (USYC), BlackRock (BUIDL), Franklin Templeton (BENJI), Superstate (USTB).
+
+## Long-term direction (Year 2+)
+
+The hook is the foundation, not the ceiling. Once institutional LPs are receiving automated yield across multiple pools and chains, two directions open up naturally.
+
+**Institutional Treasury Dashboard.** Asset issuers managing positions across Base, Arbitrum, and Unichain currently have no unified interface for monitoring yield accumulation, distribution history, and LP composition across their pools. A secure, non-custodial enterprise interface built on top of the free hook infrastructure gives institutional operations teams the analytics and compliance reporting they need - institutional-grade data dashboards, automated compliance guardrails (KYC/AML wallet checks before yield distribution), and cross-chain position views. This is the natural Product 2, built on the trust already established through the hook. The core smart contract layer stays completely free and un-forkable.
+
+**Protocol governance.** The pool whitelist is currently administered by a multi-sig. As the network of whitelisted pools scales, decentralizing that governance through a protocol token becomes the logical evolution - allowing the ecosystem (asset issuers, institutional LPs, keeper operators) to participate in onboarding decisions, execution parameters, and upgrade approvals rather than depending on a centralized admin key.
+
+Both are post-mainnet. The hook ships first.
 
 ## What is live today
 

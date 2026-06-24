@@ -1,13 +1,13 @@
 ---
 title: Overview
-description: Cronstream is a Uniswap v4 hook that automatically distributes yield from RWA and rebasing stablecoin pools directly to liquidity providers — no manual claiming, no custody risk, no protocol fee.
+description: Cronstream is a Uniswap v4 hook that automatically distributes yield from RWA and rebasing stablecoin pools directly to liquidity providers - no manual claiming, no custody risk, no protocol fee.
 ---
 
 import { Callout } from 'nextra/components'
 
 # Cronstream Protocol
 
-Cronstream is a Uniswap v4 hook that restores the native yield distribution pipeline for Real-World Asset (RWA) and rebasing stablecoin pools. When yield-bearing assets like USDY, USYC, or BUIDL enter a standard AMM pool, their dividend and rebase mechanisms break. Cronstream intercepts that stagnant yield and pushes it directly to liquidity providers' wallets — atomically, without custody, and with zero protocol fee.
+Cronstream is a Uniswap v4 hook that restores the native yield distribution pipeline for Real-World Asset (RWA) and rebasing stablecoin pools. When yield-bearing assets like USDY, USYC, or BUIDL enter a standard AMM pool, their dividend and rebase mechanisms break. Cronstream intercepts that stagnant yield and pushes it directly to liquidity providers' wallets - atomically, without custody, and with zero protocol fee.
 
 <Callout type="info">
   Cronstream is currently in active development as part of the Uniswap Hook Incubator (UHI) cohort. Testnet deployment is scheduled post-cohort.
@@ -23,9 +23,9 @@ The tokenized RWA market has crossed [**$32.22 billion**](https://app.rwa.xyz) i
 | [USDY](https://app.rwa.xyz/assets/usdy) | Ondo Finance | $2.16B |
 | [USYC](https://app.rwa.xyz/assets/usyc) | Hashnote | $3.1B |
 
-These assets generate real yield — Treasury dividends, stablecoin rebases, lending rate accrual. But the moment they are deployed into a Uniswap pool to build secondary market liquidity, that yield distribution mechanism breaks entirely. The Uniswap v4 `PoolManager` singleton has no awareness of external token rebases or dividend accrual schedules. Yield accumulates as idle, unassigned float inside the pool manager, collecting 0% compound velocity.
+These assets generate real yield - Treasury dividends, stablecoin rebases, lending rate accrual. But the moment they are deployed into a Uniswap pool to build secondary market liquidity, that yield distribution mechanism breaks entirely. The Uniswap v4 `PoolManager` singleton has no awareness of external token rebases or dividend accrual schedules. Yield accumulates as idle, unassigned float inside the pool manager, collecting 0% compound velocity.
 
-The only current recovery path is a manual off-chain operation: snapshot the LP registry, calculate pro-rata shares, and execute a batch transfer via a centralized multi-sig. This introduces custody risk, human-error liability, and a compliance classification problem — regulators in both the US and EU have begun treating manual yield distribution operations as evidence of a centralized clearinghouse structure.
+The only current recovery path is a manual off-chain operation: snapshot the LP registry, calculate pro-rata shares, and execute a batch transfer via a centralized multi-sig. This introduces custody risk, human-error liability, and a compliance classification problem - regulators in both the US and EU have begun treating manual yield distribution operations as evidence of a centralized clearinghouse structure.
 
 ## What Cronstream does
 
@@ -44,10 +44,10 @@ The hook charges no protocol fee. 100% of yield flows to LPs. The keeper is reim
 |---|---|
 | Zero custody | Hook never holds principal LP funds. All liquidity stays inside the `PoolManager` singleton |
 | Gas invariance | Keeper wallet is fully reimbursed in native ETH within the same transaction block |
-| Permissionless trigger | `distributeYield()` is a public entrypoint — no `onlyOwner`, no access control |
+| Permissionless trigger | `distributeYield()` is a public entrypoint - no `onlyOwner`, no access control |
 | Zero protocol fee | 0% taken on distributed yield. Protocol is funded through ecosystem grants, not value extraction |
 | Cancun-native | Deployed on Cancun-active networks (Base, Arbitrum, Unichain). EIP-1153 transient storage used throughout |
 
 ## Who this is built for
 
-Cronstream is infrastructure for asset issuers, institutional LPs, and protocol treasuries deploying yield-bearing assets on Uniswap v4. It is not a consumer product. The design target is a corporate treasury allocating $10M+ in tokenized Treasuries to a Uniswap pool — a use case that currently has no automated, non-custodial yield distribution solution.
+Cronstream is infrastructure for asset issuers, institutional LPs, and protocol treasuries deploying yield-bearing assets on Uniswap v4. It is not a consumer product. The design target is a corporate treasury allocating $10M+ in tokenized Treasuries to a Uniswap pool - a use case that currently has no automated, non-custodial yield distribution solution.

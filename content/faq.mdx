@@ -1,6 +1,6 @@
 ---
 title: FAQ
-description: Technical and institutional questions about Cronstream — custody model, protocol economics, security surface, and keeper incentive alignment.
+description: Technical and institutional questions about Cronstream - custody model, protocol economics, security surface, and keeper incentive alignment.
 ---
 
 # FAQ
@@ -11,13 +11,13 @@ Answers to the questions institutional allocators, Uniswap Foundation evaluators
 
 **Why push-yield distribution instead of auto-compounding?**
 
-Auto-compounding permanently redirects yield back into the pool, increasing LP position size but locking the value as illiquid reserves inside the `PoolManager`. For individual retail LPs, auto-compounding is convenient. For institutional LPs — corporate treasuries, yield funds, family offices — real-world operations require liquid cash flow. A fund that allocates $50M in USDY to a Uniswap pool has quarterly reporting obligations, redemption windows, and cash management requirements that cannot be satisfied by a continuously growing but illiquid position. Cronstream provides direct liquidity velocity: yield arrives in the LP's wallet and is immediately deployable.
+Auto-compounding permanently redirects yield back into the pool, increasing LP position size but locking the value as illiquid reserves inside the `PoolManager`. For individual retail LPs, auto-compounding is convenient. For institutional LPs - corporate treasuries, yield funds, family offices - real-world operations require liquid cash flow. A fund that allocates $50M in USDY to a Uniswap pool has quarterly reporting obligations, redemption windows, and cash management requirements that cannot be satisfied by a continuously growing but illiquid position. Cronstream provides direct liquidity velocity: yield arrives in the LP's wallet and is immediately deployable.
 
 ---
 
 **What is the custody risk profile for principal LP funds?**
 
-Zero. Cronstream uses Uniswap v4's `PoolManager` singleton as the exclusive custody boundary. 100% of LP principal remains inside the `PoolManager` at all times — the same contract that already holds all other Uniswap v4 liquidity. The Cronstream hook contract never takes custody of principal. During a distribution, the hook only handles the yield surplus — the delta between the pool's actual token balance and its internally tracked reserves. This is a transient balance that exists for the duration of a single transaction and is fully distributed before the transaction closes.
+Zero. Cronstream uses Uniswap v4's `PoolManager` singleton as the exclusive custody boundary. 100% of LP principal remains inside the `PoolManager` at all times - the same contract that already holds all other Uniswap v4 liquidity. The Cronstream hook contract never takes custody of principal. During a distribution, the hook only handles the yield surplus - the delta between the pool's actual token balance and its internally tracked reserves. This is a transient balance that exists for the duration of a single transaction and is fully distributed before the transaction closes.
 
 ---
 
@@ -33,7 +33,7 @@ Hooks expand the attack surface relative to a standard Uniswap pool by adding ar
 
 - **Reentrancy during `unlockCallback`.** Guarded by an EIP-1153 transient storage lock set at `distributeYield()` entry and valid for the transaction's lifetime.
 - **LP list manipulation.** An attacker could attempt to register a large number of LP addresses to inflate gas cost during the distribution loop. Mitigated by minimum liquidity thresholds for inclusion in the `lpList`.
-- **Keeper front-running.** The keeper reimbursement amount is calculated at runtime using `gasleft()`. An attacker who front-runs the distribution transaction gains no advantage — the reimbursement is only transferred to `tx.origin`, not a configurable address.
+- **Keeper front-running.** The keeper reimbursement amount is calculated at runtime using `gasleft()`. An attacker who front-runs the distribution transaction gains no advantage - the reimbursement is only transferred to `tx.origin`, not a configurable address.
 - **Inline swap MEV.** The exact-output ETH swap during keeper reimbursement is a potential MEV target. The swap size is small (typically &lt;0.05% of pool liquidity) and is bounded by the keeper gas calculation, limiting MEV exposure.
 
 An external security audit covering all four vectors is a prerequisite for mainnet deployment.
@@ -42,13 +42,13 @@ An external security audit covering all four vectors is a prerequisite for mainn
 
 **What happens if the keeper never calls `distributeYield()`?**
 
-Yield accumulates indefinitely inside the pool as an unassigned surplus. It does not disappear. LPs do not lose yield — it is sitting in the `PoolManager`'s token balance waiting to be claimed. Any party can run a keeper and trigger distribution at any time. The protocol is permissionless: there is no designated keeper, no trusted operator, and no single point of failure.
+Yield accumulates indefinitely inside the pool as an unassigned surplus. It does not disappear. LPs do not lose yield - it is sitting in the `PoolManager`'s token balance waiting to be claimed. Any party can run a keeper and trigger distribution at any time. The protocol is permissionless: there is no designated keeper, no trusted operator, and no single point of failure.
 
 ---
 
 **Can the hook be attached to any Uniswap v4 pool?**
 
-Cronstream is designed specifically for pools containing yield-bearing or rebasing tokens. Attaching it to a standard non-rebasing pool (e.g., ETH/USDC) produces no meaningful behavior — there is no rebase surplus to detect, and swap fees are already distributed to LPs through the standard Uniswap v4 fee mechanism. The hook is most valuable in pools where at least one token has an external yield distribution mechanism that is otherwise incompatible with AMM accounting.
+Cronstream is designed specifically for pools containing yield-bearing or rebasing tokens. Attaching it to a standard non-rebasing pool (e.g., ETH/USDC) produces no meaningful behavior - there is no rebase surplus to detect, and swap fees are already distributed to LPs through the standard Uniswap v4 fee mechanism. The hook is most valuable in pools where at least one token has an external yield distribution mechanism that is otherwise incompatible with AMM accounting.
 
 ---
 
@@ -60,4 +60,4 @@ Base, Arbitrum One, and Unichain. All three are Cancun-active (EIP-1153 transien
 
 **Is Cronstream open source?**
 
-Yes. The hook contracts, test suite, and keeper script are MIT licensed and will be published to GitHub alongside testnet deployment. Cronstream's zero-fee architecture means there is no commercial incentive to obscure the implementation — forks are welcome and expected.
+Yes. The hook contracts, test suite, and keeper script are MIT licensed and will be published to GitHub alongside testnet deployment. Cronstream's zero-fee architecture means there is no commercial incentive to obscure the implementation - forks are welcome and expected.

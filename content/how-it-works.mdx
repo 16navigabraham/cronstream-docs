@@ -1,6 +1,6 @@
 ---
 title: How It Works
-description: The five-step Cronstream lifecycle — from LP position tracking to atomic yield distribution and keeper gas reimbursement.
+description: The five-step Cronstream lifecycle - from LP position tracking to atomic yield distribution and keeper gas reimbursement.
 ---
 
 import { Callout, Steps } from 'nextra/components'
@@ -15,7 +15,7 @@ Cronstream operates as a Uniswap v4 hook attached to a yield-bearing pool. The p
 
 ### Liquidity range tracking
 
-When an LP adds a position to a Cronstream-attached pool, the `afterAddLiquidity` hook callback fires. The hook records the LP's wallet address, their liquidity delta, and their current ownership fraction relative to total pool liquidity. This data is written to a persistent on-chain mapping — the hook's liquidity ownership matrix.
+When an LP adds a position to a Cronstream-attached pool, the `afterAddLiquidity` hook callback fires. The hook records the LP's wallet address, their liquidity delta, and their current ownership fraction relative to total pool liquidity. This data is written to a persistent on-chain mapping - the hook's liquidity ownership matrix.
 
 When an LP removes or reduces a position, `afterRemoveLiquidity` fires and scales down their recorded share proportionally.
 
@@ -30,26 +30,26 @@ The `afterSwap` and `afterDonate` callbacks measure the current pool token balan
 
 ### Reactive smart contract monitoring
 
-`distributeYield()` is a fully public, permissionless entrypoint — any address can call it. The caller receives exact gas reimbursement from the yield pool inline, making the protocol self-sustaining regardless of who triggers it.
+`distributeYield()` is a fully public, permissionless entrypoint - any address can call it. The caller receives exact gas reimbursement from the yield pool inline, making the protocol self-sustaining regardless of who triggers it.
 
-In practice, Cronstream deploys a [Reactive Network](https://reactive.network) smart contract as its primary automation client. Instead of a centralized off-chain script, the Reactive contract monitors the pool's on-chain balance delta autonomously and calls `distributeYield()` the moment the threshold is crossed — with no human intervention and no server required. The callback payload includes an execution flag that determines how gas is settled:
+In practice, Cronstream deploys a [Reactive Network](https://reactive.network) smart contract as its primary automation client. Instead of a centralized off-chain script, the Reactive contract monitors the pool's on-chain balance delta autonomously and calls `distributeYield()` the moment the threshold is crossed - with no human intervention and no server required. The callback payload includes an execution flag that determines how gas is settled:
 
 - **Standard mode (flag 0):** The hook runs the inline exact-output ETH swap and reimburses the Reactive relayer from the yield pool.
 - **Sponsored mode (flag 1):** If an ecosystem foundation has pre-funded a Reactive relayer treasury or paymaster, the swap is skipped and 100% of yield flows to LPs.
 
-Because the entrypoint has no access control, the Reactive contract is not a dependency — any keeper, bot, or LP can trigger a distribution independently if needed.
+Because the entrypoint has no access control, the Reactive contract is not a dependency - any keeper, bot, or LP can trigger a distribution independently if needed.
 
 ### Token unit threshold trigger
 
 When accumulated surplus crosses a configurable raw token threshold, the Reactive contract calls `distributeYield(PoolKey calldata key)` on the hook.
 
-Thresholds are defined in **native token units** — for example, `1_000e6` USDC or `0.1e18` WETH — not in USD value. This is a deliberate design choice:
+Thresholds are defined in **native token units** - for example, `1_000e6` USDC or `0.1e18` WETH - not in USD value. This is a deliberate design choice:
 
 - No external price feed required (no Chainlink dependency, no oracle manipulation surface)
 - Threshold evaluation is fully deterministic and on-chain verifiable
 - Gas reimbursement is calculated in raw ETH at `tx.gasprice`, not a USD estimate
 
-The threshold is set per pool at deployment and is tunable by the protocol administrator. Higher thresholds mean less frequent but larger distributions — the right tradeoff for institutional LPs who prefer infrequent bulk payouts over frequent micro-distributions.
+The threshold is set per pool at deployment and is tunable by the protocol administrator. Higher thresholds mean less frequent but larger distributions - the right tradeoff for institutional LPs who prefer infrequent bulk payouts over frequent micro-distributions.
 
 ### Atomic flash settle and push payout
 
@@ -90,7 +90,7 @@ The `PoolManager` validates that `NonzeroDeltaCount == 0` before accepting the s
 
 ## LP experience
 
-From the LP's perspective, Cronstream is invisible. They deposit into a Uniswap v4 pool in the normal way. At unpredictable intervals — determined by trading volume and rebase frequency — yield arrives directly in their wallet with no action required. There is no claim transaction, no gas cost to the LP, and no dashboard to check.
+From the LP's perspective, Cronstream is invisible. They deposit into a Uniswap v4 pool in the normal way. At unpredictable intervals - determined by trading volume and rebase frequency - yield arrives directly in their wallet with no action required. There is no claim transaction, no gas cost to the LP, and no dashboard to check.
 
 <Callout type="info">
   LPs never interact with the Cronstream hook directly. The only user-facing change is that yield appears in their wallet automatically rather than requiring a claim.
@@ -114,12 +114,12 @@ With the `poolId` whitelisted, anyone can now call `PoolManager.initialize()` wi
 
 ### Liquidity provisioning
 
-LPs deploy capital into the initialized pool via the Uniswap v4 `PositionManager`. Every deposit triggers `afterAddLiquidity`, which registers the LP's wallet address and liquidity weight in the hook's ownership matrix. From this point, the automated yield distribution pipeline is active — no further action is required from the issuer or LPs.
+LPs deploy capital into the initialized pool via the Uniswap v4 `PositionManager`. Every deposit triggers `afterAddLiquidity`, which registers the LP's wallet address and liquidity weight in the hook's ownership matrix. From this point, the automated yield distribution pipeline is active - no further action is required from the issuer or LPs.
 
 </Steps>
 
 <Callout type="info">
-  The [cronstream.xyz](https://cronstream.xyz) frontend exists exclusively for the registry whitelisting step. It is an administrative interface for institutional asset issuers — not a consumer trading interface.
+  The [cronstream.xyz](https://cronstream.xyz) frontend exists exclusively for the registry whitelisting step. It is an administrative interface for institutional asset issuers - not a consumer trading interface.
 </Callout>
 
 <Callout type="warning">
@@ -128,9 +128,9 @@ LPs deploy capital into the initialized pool via the Uniswap v4 `PositionManager
 
 ## Yield ownership and security
 
-Yield in Cronstream cannot be diverted to an unauthorized address. The hook does not distribute yield to whoever calls `distributeYield()` or to whoever initialized the pool — it distributes exclusively to the addresses recorded in its LP ownership matrix.
+Yield in Cronstream cannot be diverted to an unauthorized address. The hook does not distribute yield to whoever calls `distributeYield()` or to whoever initialized the pool - it distributes exclusively to the addresses recorded in its LP ownership matrix.
 
-When `distributeYield()` is called (by anyone — a keeper, a bot, or an LP), the hook:
+When `distributeYield()` is called (by anyone - a keeper, a bot, or an LP), the hook:
 
 1. Looks up the `lpList` for that pool
 2. Calculates each LP's pro-rata share based on their recorded liquidity weight
@@ -140,6 +140,6 @@ The caller receives only their exact gas reimbursement in ETH. If a third party 
 
 ## Security model
 
-The hook holds no principal funds at any point. All LP liquidity remains inside the `PoolManager` singleton, which is the canonical Uniswap v4 security boundary. The hook only ever handles yield surplus — the delta between the pool's actual token balance and its internally tracked reserves.
+The hook holds no principal funds at any point. All LP liquidity remains inside the `PoolManager` singleton, which is the canonical Uniswap v4 security boundary. The hook only ever handles yield surplus - the delta between the pool's actual token balance and its internally tracked reserves.
 
 Reentrancy is guarded via an EIP-1153 transient storage lock that is set at `distributeYield()` entry and automatically cleared when the transaction frame closes, with zero permanent storage cost.

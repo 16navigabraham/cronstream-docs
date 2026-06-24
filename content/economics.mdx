@@ -1,6 +1,6 @@
 ---
 title: Economics
-description: Cronstream's zero-rent public good model — why the protocol charges no fee, how the keeper engine funds itself, and where protocol revenue actually comes from.
+description: Cronstream's zero-rent public good model - why the protocol charges no fee, how the keeper engine funds itself, and where protocol revenue actually comes from.
 ---
 
 import { Callout } from 'nextra/components'
@@ -15,7 +15,7 @@ This is a deliberate architectural choice, not a temporary promotional decision.
 
 ### The vampire fork problem
 
-Any protocol that charges a performance fee on yield distribution is trivially forkable. BlackRock, Ondo, or any sophisticated asset issuer can read the hook's source code, remove the fee line, deploy their own copy, and redirect all future distributions through their fee-free fork. The original protocol retains zero network effect — LPs migrate to the fork immediately because they receive 100% of yield instead of 98%.
+Any protocol that charges a performance fee on yield distribution is trivially forkable. BlackRock, Ondo, or any sophisticated asset issuer can read the hook's source code, remove the fee line, deploy their own copy, and redirect all future distributions through their fee-free fork. The original protocol retains zero network effect - LPs migrate to the fork immediately because they receive 100% of yield instead of 98%.
 
 A 0% fee eliminates this attack vector entirely. There is nothing to strip out of the code. The protocol cannot be improved by forking it.
 
@@ -38,11 +38,11 @@ When the keeper calls `distributeYield()`:
 3. An inline exact-output swap converts a fractional amount of the yield into native ETH
 4. The ETH is transferred to `tx.origin` (the keeper wallet) before the unlock session closes
 
-The keeper's net position after every successful distribution call is exactly neutral — gas spent equals ETH received. The keeper operates indefinitely without any external funding source.
+The keeper's net position after every successful distribution call is exactly neutral - gas spent equals ETH received. The keeper operates indefinitely without any external funding source.
 
 ### Ecosystem-sponsored gas override
 
-When an ecosystem foundation (Uniswap Foundation, Arbitrum, Base) provides a gas subsidy — via an ERC-4337 paymaster or a pre-funded keeper treasury — Cronstream can skip the inline swap entirely. In this mode:
+When an ecosystem foundation (Uniswap Foundation, Arbitrum, Base) provides a gas subsidy - via an ERC-4337 paymaster or a pre-funded keeper treasury - Cronstream can skip the inline swap entirely. In this mode:
 
 - No yield tokens are converted to ETH
 - 100% of the captured surplus flows to LPs
@@ -64,7 +64,7 @@ The reimbursement fraction is determined entirely by the gas price at execution 
 
 ## Threshold calibration
 
-Thresholds are set in raw token units per pool — no external price oracle is used. The threshold is the primary tuning parameter for capital efficiency, controlling the ratio of gas cost to yield distributed:
+Thresholds are set in raw token units per pool - no external price oracle is used. The threshold is the primary tuning parameter for capital efficiency, controlling the ratio of gas cost to yield distributed:
 
 | Threshold (raw units) | Approx. USD equivalent | Typical keeper cost | Gas-to-yield ratio |
 |---|---|---|---|
@@ -72,7 +72,7 @@ Thresholds are set in raw token units per pool — no external price oracle is u
 | `1_000e6` USDC | ~$1,000 | ~$2–4 | ~0.2–0.4% |
 | `10_000e6` USDC | ~$10,000 | ~$2–4 | ~0.02–0.04% |
 
-USD equivalents shown for reference only — the contract evaluates raw token amounts, not price-feed values.
+USD equivalents shown for reference only - the contract evaluates raw token amounts, not price-feed values.
 
 Higher thresholds are more capital-efficient for LPs but introduce longer wait times between distributions. The default $1,000 threshold is calibrated for institutional LP pools where infrequent but large distributions are preferable to frequent micro-payouts.
 
@@ -80,6 +80,6 @@ Higher thresholds are more capital-efficient for LPs but introduce longer wait t
 
 Cronstream operates on a dual-track funding model:
 
-**Track 1: Ecosystem grants.** Development costs, audit fees, and operational runway are funded through non-dilutive grants from protocol ecosystem funds. Target grant sources include the Uniswap Foundation Hook Grants program, Arbitrum Foundation developer grants, and Base Ecosystem Fund allocations. Each of these programs explicitly prioritizes non-extractive infrastructure with demonstrated TVL impact — the exact category Cronstream occupies.
+**Track 1: Ecosystem grants.** Development costs, audit fees, and operational runway are funded through non-dilutive grants from protocol ecosystem funds. Target grant sources include the Uniswap Foundation Hook Grants program, Arbitrum Foundation developer grants, and Base Ecosystem Fund allocations. Each of these programs explicitly prioritizes non-extractive infrastructure with demonstrated TVL impact - the exact category Cronstream occupies.
 
-**Track 2: Institutional integrations.** Asset issuers (BlackRock BUIDL, Ondo USDY, Hashnote USYC) that integrate Cronstream into their primary liquidity pools gain a competitive advantage in LP acquisition — LPs who know they will receive automated, gas-free yield distribution preferentially allocate to those pools. Integration partnerships with asset issuers create a revenue pathway through advisory and deployment services, without touching the hook's zero-fee architecture.
+**Track 2: Institutional integrations.** Asset issuers (BlackRock BUIDL, Ondo USDY, Hashnote USYC) that integrate Cronstream into their primary liquidity pools gain a competitive advantage in LP acquisition - LPs who know they will receive automated, gas-free yield distribution preferentially allocate to those pools. Integration partnerships with asset issuers create a revenue pathway through advisory and deployment services, without touching the hook's zero-fee architecture.

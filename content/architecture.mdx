@@ -1,6 +1,6 @@
 ---
 title: Architecture
-description: Low-level EVM architecture of the Cronstream hook — flash accounting, EIP-1153 transient storage, and the lock-callback state machine.
+description: Low-level EVM architecture of the Cronstream hook - flash accounting, EIP-1153 transient storage, and the lock-callback state machine.
 ---
 
 import { Callout } from 'nextra/components'
@@ -13,13 +13,13 @@ Cronstream is a single contract, `CronstreamHook.sol`, inheriting from Uniswap v
 
 ```
 /src
-  CronstreamHook.sol          — master hook implementation
+  CronstreamHook.sol          - master hook implementation
   libraries/
-    TransientAccounting.sol   — TSTORE/TLOAD assembly wrappers
+    TransientAccounting.sol   - TSTORE/TLOAD assembly wrappers
 /test
-  Cronstream.t.sol            — Foundry unit and integration tests
+  Cronstream.t.sol            - Foundry unit and integration tests
 /scripts
-  Keeper.ts                   — off-chain keeper automation
+  Keeper.ts                   - off-chain keeper automation
 ```
 
 ## Hook permission flags
@@ -28,7 +28,7 @@ Uniswap v4 encodes hook permissions into the hook's deployment address via bitwi
 
 | Callback | Purpose |
 |---|---|
-| `beforeInitialize` | Pool authorization gate — rejects any pool not on the whitelist |
+| `beforeInitialize` | Pool authorization gate - rejects any pool not on the whitelist |
 | `afterAddLiquidity` | Record LP address and update liquidity ownership share |
 | `afterRemoveLiquidity` | Scale down LP ownership on position exit |
 | `afterSwap` | Measure fee surplus delta after each swap |
@@ -38,7 +38,7 @@ The `getHookPermissions()` function returns the corresponding `Hooks.Permissions
 
 ## Pool authorization
 
-In Uniswap v4, any address can deploy a pool that references a given hook contract. Without a guard, a malicious actor could bind Cronstream to a spam or illiquid pool — polluting the keeper's event feed and creating exploitable edge cases in the inline swap.
+In Uniswap v4, any address can deploy a pool that references a given hook contract. Without a guard, a malicious actor could bind Cronstream to a spam or illiquid pool - polluting the keeper's event feed and creating exploitable edge cases in the inline swap.
 
 `beforeInitialize` acts as an access control gate. Only pools explicitly registered by the protocol administrator are permitted to bind to the hook:
 
@@ -83,7 +83,7 @@ lpShare = (lpLiquidity[poolId][lp] × surplusAmount) / totalLiquidity[poolId]
 
 ## Transient storage slots
 
-All intra-transaction state — reentrancy locks, gas bookkeeping, and intermediate delta accumulation — is stored in EIP-1153 transient storage (Solidity 0.8.26+, Cancun EVM). These slots cost ~100 gas to write versus 20,000 gas for a cold SSTORE, and are automatically zeroed at the end of each transaction with no explicit cleanup required.
+All intra-transaction state - reentrancy locks, gas bookkeeping, and intermediate delta accumulation - is stored in EIP-1153 transient storage (Solidity 0.8.26+, Cancun EVM). These slots cost ~100 gas to write versus 20,000 gas for a cold SSTORE, and are automatically zeroed at the end of each transaction with no explicit cleanup required.
 
 ```solidity
 // Custom EIP-1153 transient slot constants
@@ -124,11 +124,11 @@ The reentrancy lock is set and the entry gas is recorded in transient storage be
 
 The callback receives the encoded `key` and `keeper` address. It executes the following sequence atomically:
 
-**Step 1 — Surplus isolation.** The hook calls `poolManager.sync(currency0)` to force the `PoolManager` to register any balance increase from token rebases. The resulting positive delta represents the unassigned rebase surplus.
+**Step 1 - Surplus isolation.** The hook calls `poolManager.sync(currency0)` to force the `PoolManager` to register any balance increase from token rebases. The resulting positive delta represents the unassigned rebase surplus.
 
-**Step 2 — Delta generation.** `poolManager.take(currency, address(this), surplusAmount)` transfers the surplus tokens to the hook. This creates a negative currency delta (the hook owes the pool).
+**Step 2 - Delta generation.** `poolManager.take(currency, address(this), surplusAmount)` transfers the surplus tokens to the hook. This creates a negative currency delta (the hook owes the pool).
 
-**Step 3 — Gas calculation.** The hook computes the exact ETH owed to the keeper:
+**Step 3 - Gas calculation.** The hook computes the exact ETH owed to the keeper:
 
 ```
 ΔTH = (Gas_start − Gas_end + Ω) × tx.gasprice
@@ -136,23 +136,23 @@ The callback receives the encoded `key` and `keeper` address. It executes the fo
 
 Where `Ω` is a constant overhead factor covering post-calculation execution cost. This is calculated using `INITIAL_GAS_SLOT` from transient storage.
 
-**Step 4 — Inline ETH acquisition.** The hook executes an exact-output swap on a pre-configured ETH/stablecoin pool inside the same `PoolManager` session, acquiring the precise ETH amount calculated in Step 3. `poolManager.settle(stablecoin)` balances the stablecoin delta.
+**Step 4 - Inline ETH acquisition.** The hook executes an exact-output swap on a pre-configured ETH/stablecoin pool inside the same `PoolManager` session, acquiring the precise ETH amount calculated in Step 3. `poolManager.settle(stablecoin)` balances the stablecoin delta.
 
-**Step 5 — Distribution and settlement.** ETH is transferred to the keeper (`payable(keeper).call{value: ethOwed}("")`). The remaining stablecoin balance is distributed to each LP address in `lpList` proportionally. All currency deltas must equal zero before the callback returns — the `PoolManager` enforces this invariant and reverts the entire transaction if `NonzeroDeltaCount != 0`.
+**Step 5 - Distribution and settlement.** ETH is transferred to the keeper (`payable(keeper).call{value: ethOwed}("")`). The remaining stablecoin balance is distributed to each LP address in `lpList` proportionally. All currency deltas must equal zero before the callback returns - the `PoolManager` enforces this invariant and reverts the entire transaction if `NonzeroDeltaCount != 0`.
 
 ### Exit
 
 When `unlockCallback` returns, `REENTRANCY_SLOT` and all other transient slots are automatically zeroed by the EVM. The keeper's wallet balance has increased by the exact gas cost of the transaction. Each LP's wallet has received their yield share.
 
 <Callout type="info">
-  The entire distribution — surplus isolation, keeper reimbursement, and LP payouts — executes as a single atomic transaction. It either completes in full or reverts entirely. There is no partial distribution state.
+  The entire distribution - surplus isolation, keeper reimbursement, and LP payouts - executes as a single atomic transaction. It either completes in full or reverts entirely. There is no partial distribution state.
 </Callout>
 
 ## Reactive Network keeper
 
-The `distributeYield()` entrypoint carries no access control — it is fully public. Any address that calls it receives exact gas reimbursement from the yield pool, making the protocol infrastructure-neutral by design.
+The `distributeYield()` entrypoint carries no access control - it is fully public. Any address that calls it receives exact gas reimbursement from the yield pool, making the protocol infrastructure-neutral by design.
 
-Cronstream's primary automation client is a Reactive smart contract deployed on [Reactive Network](https://reactive.network) — a decentralized event-driven execution layer that monitors on-chain state and autonomously triggers cross-chain callbacks. The Reactive contract is not a gatekeeper; it is the reference keeper implementation. If it were offline, any other caller could trigger distributions without protocol-level changes.
+Cronstream's primary automation client is a Reactive smart contract deployed on [Reactive Network](https://reactive.network) - a decentralized event-driven execution layer that monitors on-chain state and autonomously triggers cross-chain callbacks. The Reactive contract is not a gatekeeper; it is the reference keeper implementation. If it were offline, any other caller could trigger distributions without protocol-level changes.
 
 ### What the Reactive contract does
 
@@ -169,11 +169,11 @@ flag = 0  →  Standard mode: inline ETH swap reimburses the Reactive relayer
 flag = 1  →  Sponsored mode: swap skipped, 100% of yield distributed to LPs
 ```
 
-In sponsored mode, transaction costs are absorbed by a pre-funded Reactive Network relayer treasury or an ERC-4337 paymaster provided by an ecosystem foundation (Uniswap Foundation, Arbitrum, Base). No contract changes are required to switch between modes — the flag is passed at call time.
+In sponsored mode, transaction costs are absorbed by a pre-funded Reactive Network relayer treasury or an ERC-4337 paymaster provided by an ecosystem foundation (Uniswap Foundation, Arbitrum, Base). No contract changes are required to switch between modes - the flag is passed at call time.
 
 ### Slippage ceiling
 
-Before emitting the callback, the Reactive contract checks a live oracle price for the yield token. If the inline ETH swap would require consuming more yield tokens than a configured maximum input ceiling — a signal that the ETH pool is being manipulated or is illiquid at that moment — the Reactive contract does not emit the callback. The distribution is deferred to the next block rather than executing at an adverse price.
+Before emitting the callback, the Reactive contract checks a live oracle price for the yield token. If the inline ETH swap would require consuming more yield tokens than a configured maximum input ceiling - a signal that the ETH pool is being manipulated or is illiquid at that moment - the Reactive contract does not emit the callback. The distribution is deferred to the next block rather than executing at an adverse price.
 
 This protects LP funds from sandwich attacks on the keeper reimbursement swap without requiring any on-hook price oracle logic.
 

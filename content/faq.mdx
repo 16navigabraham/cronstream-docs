@@ -40,6 +40,12 @@ An external security audit covering all four vectors is a prerequisite for mainn
 
 ---
 
+**What happens if a BUIDL LP loses their KYC status mid-distribution?**
+
+Institutional RWA tokens enforce on-chain transfer restrictions. If an LP's wallet is blacklisted or loses its KYC clearance between distributions, a standard `transfer()` to that address will revert. Cronstream's distribution loop wraps each individual LP transfer in a try/catch block. A failed transfer escrows that LP's yield in an isolated `escrowedYield` mapping and continues to the next LP. The transaction does not revert, the keeper is reimbursed, and all compliant LPs receive their yield. The affected LP can resolve their compliance status and withdraw their escrowed balance separately.
+
+---
+
 **What happens if the keeper never calls `distributeYield()`?**
 
 Yield accumulates indefinitely inside the pool as an unassigned surplus. It does not disappear. LPs do not lose yield - it is sitting in the `PoolManager`'s token balance waiting to be claimed. Any party can run a keeper and trigger distribution at any time. The protocol is permissionless: there is no designated keeper, no trusted operator, and no single point of failure.

@@ -148,6 +148,33 @@ When `unlockCallback` returns, `REENTRANCY_SLOT` and all other transient slots a
   The entire distribution - surplus isolation, keeper reimbursement, and LP payouts - executes as a single atomic transaction. It either completes in full or reverts entirely. There is no partial distribution state.
 </Callout>
 
+## Compliance-resilient distribution loop
+
+Institutional RWA tokens like BUIDL enforce on-chain transfer restrictions - a recipient address that has lost its KYC status will cause a `transfer()` call to revert. In a standard distribution loop, a single non-compliant LP address would revert the entire atomic transaction, freezing yield for every other LP in the pool.
+
+Cronstream handles this with a try/catch escrow fallback. Each LP transfer is wrapped individually:
+
+```solidity
+mapping(address => uint256) public escrowedYield;
+
+for (uint256 i = 0; i < lpList.length; i++) {
+    address lp = lpList[i];
+    if (lpLiquidity[poolId][lp] < MINIMUM_LIQUIDITY) continue;
+    uint256 amount = (lpLiquidity[poolId][lp] * surplus) / totalLiquidity[poolId];
+
+    try IERC20(yieldToken).transfer(lp, amount) {
+        // success - yield pushed to LP wallet
+    } catch {
+        // transfer failed (KYC revoked, blacklist, etc.)
+        // isolate yield and continue loop - other LPs are unaffected
+        escrowedYield[lp] += amount;
+        emit YieldEscrowed(lp, amount);
+    }
+}
+```
+
+If a transfer fails, the yield is parked in `escrowedYield` for that address. The LP can resolve their compliance status and pull the escrowed amount separately. Every other LP in the pool receives their distribution without interruption. The `MINIMUM_LIQUIDITY` threshold also prevents dust positions from bloating the `lpList` and inflating gas cost.
+
 ## Reactive Network keeper
 
 The `distributeYield()` entrypoint carries no access control - it is fully public. Any address that calls it receives exact gas reimbursement from the yield pool, making the protocol infrastructure-neutral by design.

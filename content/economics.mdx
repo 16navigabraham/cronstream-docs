@@ -38,7 +38,7 @@ When the keeper calls `distributeYield()`:
 3. An inline exact-output swap converts a fractional amount of the yield into native ETH
 4. The ETH is transferred to `tx.origin` (the keeper wallet) before the unlock session closes
 
-The keeper's net position after every successful distribution call is exactly neutral - gas spent equals ETH received. The keeper operates indefinitely without any external funding source.
+The keeper's net position after every successful distribution call is slightly positive. The gas formula includes a fixed overhead constant `Ω` covering post-calculation execution cost, so the reimbursement is marginally higher than the actual gas spent. Over time the keeper accumulates a small surplus, giving it a self-replenishing ETH float with no external top-up required.
 
 ### Ecosystem-sponsored gas override
 

@@ -46,9 +46,11 @@ Institutional RWA tokens enforce on-chain transfer restrictions. If an LP's wall
 
 ---
 
-**What happens if the keeper never calls `distributeYield()`?**
+**What is the keeper and what happens if it goes offline?**
 
-Yield accumulates indefinitely inside the pool as an unassigned surplus. It does not disappear. LPs do not lose yield - it is sitting in the `PoolManager`'s token balance waiting to be claimed. Any party can run a keeper and trigger distribution at any time. The protocol is permissionless: there is no designated keeper, no trusted operator, and no single point of failure.
+Cronstream runs a Node.js keeper service as its primary automation client. The keeper holds an EOA wallet, subscribes to pool events via WebSocket RPC, and calls `distributeYield()` autonomously when the yield threshold is crossed. It is self-funding: the hook's `gasleft()` calculation reimburses the exact ETH cost back to the keeper's wallet in the same transaction, so the keeper requires no external subsidy beyond a minimal ETH float.
+
+If the primary keeper goes offline, yield accumulates inside the pool as an unassigned surplus - it does not disappear and LPs do not lose it. Because `distributeYield()` has no access control and guarantees a gas reimbursement to any caller, the protocol creates an open economic incentive: MEV searchers, the asset issuer, or any third-party bot can call the function, collect the reimbursement, and continue distributions without any protocol-level change. There is no designated keeper, no trusted operator, and no single point of failure.
 
 ---
 

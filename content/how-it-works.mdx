@@ -39,11 +39,17 @@ In practice, Cronstream deploys a [Reactive Network](https://reactive.network) s
 
 Because the entrypoint has no access control, the Reactive contract is not a dependency — any keeper, bot, or LP can trigger a distribution independently if needed.
 
-### Dollar threshold trigger
+### Token unit threshold trigger
 
-When accumulated yield crosses a configurable capital efficiency threshold (default: **$1,000 USDC equivalent**), the keeper broadcasts a transaction calling `distributeYield(PoolKey calldata key)` on the hook contract.
+When accumulated surplus crosses a configurable raw token threshold, the Reactive contract calls `distributeYield(PoolKey calldata key)` on the hook.
 
-The threshold prevents distributions from being uneconomical — a gas-cost-to-yield ratio below the threshold means the keeper's reimbursement would consume a material fraction of the distributed amount, which is undesirable for LPs. The threshold is tunable at deployment.
+Thresholds are defined in **native token units** — for example, `1_000e6` USDC or `0.1e18` WETH — not in USD value. This is a deliberate design choice:
+
+- No external price feed required (no Chainlink dependency, no oracle manipulation surface)
+- Threshold evaluation is fully deterministic and on-chain verifiable
+- Gas reimbursement is calculated in raw ETH at `tx.gasprice`, not a USD estimate
+
+The threshold is set per pool at deployment and is tunable by the protocol administrator. Higher thresholds mean less frequent but larger distributions — the right tradeoff for institutional LPs who prefer infrequent bulk payouts over frequent micro-distributions.
 
 ### Atomic flash settle and push payout
 
@@ -89,6 +95,44 @@ From the LP's perspective, Cronstream is invisible. They deposit into a Uniswap 
 <Callout type="info">
   LPs never interact with the Cronstream hook directly. The only user-facing change is that yield appears in their wallet automatically rather than requiring a claim.
 </Callout>
+
+## Institutional onboarding sequence
+
+Asset issuers (Permian Labs, Ondo, BlackRock) do not interact with the hook directly during normal operation. Setup requires three steps, executed in strict order:
+
+<Steps>
+
+### Registry whitelisting
+
+The asset issuer submits their target `PoolKey` parameters via the [Cronstream registry](https://cronstream.xyz). The protocol administrator calls `authorizePool(PoolKey)` on the hook contract, storing the `poolId` hash in the `isAuthorizedPool` mapping.
+
+No further involvement is required from the issuer after this step.
+
+### Pool initialization
+
+With the `poolId` whitelisted, anyone can now call `PoolManager.initialize()` with the Cronstream hook address attached. The hook's `beforeInitialize` callback fires, verifies the `poolId` against the whitelist, and permits the pool to be created. Any pool attempting to initialize without prior whitelisting reverts immediately.
+
+### Liquidity provisioning
+
+LPs deploy capital into the initialized pool via the Uniswap v4 `PositionManager`. Every deposit triggers `afterAddLiquidity`, which registers the LP's wallet address and liquidity weight in the hook's ownership matrix. From this point, the automated yield distribution pipeline is active — no further action is required from the issuer or LPs.
+
+</Steps>
+
+<Callout type="info">
+  The [cronstream.xyz](https://cronstream.xyz) frontend exists exclusively for the registry whitelisting step. It is an administrative interface for institutional asset issuers — not a consumer trading interface.
+</Callout>
+
+## Yield ownership and security
+
+Yield in Cronstream cannot be diverted to an unauthorized address. The hook does not distribute yield to whoever calls `distributeYield()` or to whoever initialized the pool — it distributes exclusively to the addresses recorded in its LP ownership matrix.
+
+When `distributeYield()` is called (by anyone — a keeper, a bot, or an LP), the hook:
+
+1. Looks up the `lpList` for that pool
+2. Calculates each LP's pro-rata share based on their recorded liquidity weight
+3. Transfers yield directly to each LP's registered wallet via `IERC20.transfer()`
+
+The caller receives only their exact gas reimbursement in ETH. If a third party calls `distributeYield()` on a pool they have no position in, they pay gas, get reimbursed, and the yield goes entirely to the actual LPs. They have functionally volunteered to run a distribution.
 
 ## Security model
 

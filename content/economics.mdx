@@ -60,17 +60,19 @@ This is a first-class mode, not a workaround. The protocol is designed so that a
                  └── ~99.96–99.98% of yield
 ```
 
-The reimbursement fraction is determined entirely by the gas price at execution time and the size of the yield pool. At a $1,000 distribution threshold and current Base/Arbitrum gas prices, keeper reimbursement typically represents less than 0.1% of distributed yield.
+The reimbursement fraction is determined entirely by the gas price at execution time and the size of the yield pool. At a `1_000e6` USDC token threshold and current Base/Arbitrum gas prices, keeper reimbursement typically represents less than 0.1% of distributed yield.
 
 ## Threshold calibration
 
-The distribution threshold ($1,000 USDC default) is the primary tuning parameter for capital efficiency. It controls the ratio of gas cost to yield distributed:
+Thresholds are set in raw token units per pool — no external price oracle is used. The threshold is the primary tuning parameter for capital efficiency, controlling the ratio of gas cost to yield distributed:
 
-| Threshold | Typical keeper cost | Gas-to-yield ratio |
-|---|---|---|
-| $100 | ~$2–4 | ~2–4% |
-| $1,000 | ~$2–4 | ~0.2–0.4% |
-| $10,000 | ~$2–4 | ~0.02–0.04% |
+| Threshold (raw units) | Approx. USD equivalent | Typical keeper cost | Gas-to-yield ratio |
+|---|---|---|---|
+| `100e6` USDC | ~$100 | ~$2–4 | ~2–4% |
+| `1_000e6` USDC | ~$1,000 | ~$2–4 | ~0.2–0.4% |
+| `10_000e6` USDC | ~$10,000 | ~$2–4 | ~0.02–0.04% |
+
+USD equivalents shown for reference only — the contract evaluates raw token amounts, not price-feed values.
 
 Higher thresholds are more capital-efficient for LPs but introduce longer wait times between distributions. The default $1,000 threshold is calibrated for institutional LP pools where infrequent but large distributions are preferable to frequent micro-payouts.
 

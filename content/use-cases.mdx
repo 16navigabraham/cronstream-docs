@@ -16,7 +16,7 @@ Cronstream is not a general-purpose hook. It solves one specific problem: yield-
 **Protocol:** Permian Labs  
 **Asset:** sUSDai — a staked, yield-bearing synthetic dollar (ERC-4626)  
 **Backing:** Real-world GPU infrastructure loans and AI compute cluster cash flows  
-**Funding:** $13M Series A led by Framework Ventures, backed by Coinbase Ventures
+**Funding:** [$13.4M Series A](https://permian-labs.ghost.io/usdai-raises-13m-to-scale-ai-infra/) led by Framework Ventures (Dragonfly, Arbitrum Foundation, CMT Digital among co-investors); Coinbase Ventures invested separately in November 2025
 
 ### The mechanism
 
@@ -52,7 +52,7 @@ LPs in a Permian Labs pool with Cronstream receive GPU infrastructure yield auto
 
 ## Ondo Finance — USDY
 
-**Asset:** USDY — tokenized U.S. Treasury yield, $2.16B market cap  
+**Asset:** [USDY](https://app.rwa.xyz/assets/usdy) — tokenized U.S. Treasury yield, $2.16B AUM  
 **Mechanism:** Rebasing — supply increases daily as Treasury yield accrues  
 **Problem:** Each daily rebase increases the PoolManager's USDY balance without updating its internal reserves. Surplus accumulates as unassigned float.
 
@@ -60,19 +60,19 @@ Cronstream detects the post-rebase surplus via `afterDonate` / `poolManager.sync
 
 ---
 
-## Mountain Protocol — USDM
+## Hashnote — USYC
 
-**Asset:** USDM — yield-bearing stablecoin, $1.1B AUM  
-**Mechanism:** Rebasing — balances increase daily for all holders  
-**Problem:** Same as USDY. The PoolManager's USDM balance grows daily but is not attributed to any LP.
+**Asset:** [USYC](https://app.rwa.xyz/assets/usyc) — U.S. Treasury bill yield token, $3.1B AUM  
+**Mechanism:** Share value appreciation — USYC accrues yield by holding short-duration U.S. Treasury bills, increasing its NAV per token daily  
+**Problem:** As USYC's NAV increases inside a Uniswap pool, the PoolManager's balance grows above its tracked reserves. The surplus is unassigned — no LP receives it without manual intervention.
 
-USDM pools with Cronstream deliver daily stablecoin yield directly to LP wallets without any manual intervention.
+Cronstream detects the daily NAV-driven surplus via `poolManager.sync()` and distributes it pro-rata to all active LPs automatically.
 
 ---
 
 ## BlackRock — BUIDL
 
-**Asset:** BUIDL — tokenized Treasury fund, $2.4B AUM  
+**Asset:** [BUIDL](https://app.rwa.xyz/assets/buidl) — tokenized Treasury fund, $2.35B AUM  
 **Mechanism:** Dividend — weekly yield distribution to registered holders  
 **Problem:** When BUIDL is held by the PoolManager as pool liquidity, the dividend distribution goes to the pool contract address, not to individual LPs. LPs receive nothing.
 
@@ -86,7 +86,7 @@ Any ERC-4626 vault token, rebasing stablecoin, or dividend-paying asset deployed
 
 | Asset type | Examples | Yield mechanism |
 |---|---|---|
-| Tokenized Treasuries | BUIDL, BENJI, USTB | Weekly/daily dividend |
-| Rebasing stablecoins | USDY, USDM, stUSDT | Daily rebase |
+| Tokenized Treasuries | BUIDL, USYC, BENJI, USTB | Weekly/daily dividend |
+| Rebasing stablecoins | USDY, stUSDT | Daily rebase |
 | ERC-4626 vault tokens | sUSDai, sDAI, wstETH | Share value appreciation |
 | Liquid staking tokens | stETH, rETH | Daily rebase / share value |

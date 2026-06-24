@@ -9,13 +9,13 @@ import { Callout } from 'nextra/components'
 
 ## Background: the RWA liquidity expansion
 
-Institutional asset managers have spent the last 18 months aggressively moving tokenized Real-World Assets onto public EVM networks. BlackRock's BUIDL, Ondo's USDY, and Mountain Protocol's USDM are not experimental positions — they represent billions of dollars of institutional capital seeking the yield profile of traditional fixed-income instruments combined with the settlement speed and composability of on-chain infrastructure.
+Institutional asset managers have spent the last 18 months aggressively moving tokenized Real-World Assets onto public EVM networks. BlackRock's BUIDL, Ondo's USDY, and Hashnote's USYC are not experimental positions — they represent billions of dollars of institutional capital seeking the yield profile of traditional fixed-income instruments combined with the settlement speed and composability of on-chain infrastructure.
 
 To make these assets tradeable at scale, issuers need deep secondary market liquidity. The natural venue is a Uniswap v4 pool. A USDY/USDC pool, for example, gives institutional buyers a reliable execution venue and gives the issuer direct on-chain price discovery.
 
 ## Where the mechanism breaks
 
-Every yield-bearing or rebasing asset has a native distribution mechanism. USDY pays daily dividends. USDM rebases supply upward. BUIDL accrues Treasury yield to holders. These mechanisms work correctly when the asset is held in a standard EOA or a smart contract wallet.
+Every yield-bearing or rebasing asset has a native distribution mechanism. USDY pays daily dividends. USYC accrues NAV per token as Treasury bill yield compounds. BUIDL accrues Treasury yield to holders. These mechanisms work correctly when the asset is held in a standard EOA or a smart contract wallet.
 
 They break the moment the asset enters a Uniswap pool.
 

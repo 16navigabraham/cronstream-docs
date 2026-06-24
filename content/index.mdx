@@ -7,7 +7,7 @@ import { Callout } from 'nextra/components'
 
 # Cronstream Protocol
 
-Cronstream is a Uniswap v4 hook that restores the native yield distribution pipeline for Real-World Asset (RWA) and rebasing stablecoin pools. When yield-bearing assets like USDY, USDM, or BUIDL enter a standard AMM pool, their dividend and rebase mechanisms break. Cronstream intercepts that stagnant yield and pushes it directly to liquidity providers' wallets — atomically, without custody, and with zero protocol fee.
+Cronstream is a Uniswap v4 hook that restores the native yield distribution pipeline for Real-World Asset (RWA) and rebasing stablecoin pools. When yield-bearing assets like USDY, USYC, or BUIDL enter a standard AMM pool, their dividend and rebase mechanisms break. Cronstream intercepts that stagnant yield and pushes it directly to liquidity providers' wallets — atomically, without custody, and with zero protocol fee.
 
 <Callout type="info">
   Cronstream is currently in active development as part of the Uniswap Hook Incubator (UHI) cohort. Testnet deployment is scheduled post-cohort.
@@ -15,13 +15,13 @@ Cronstream is a Uniswap v4 hook that restores the native yield distribution pipe
 
 ## The capital displacement problem
 
-The tokenized RWA market has crossed **$31.4 billion** in on-chain value, anchored by **$13.53 billion** in tokenized U.S. Treasuries. Institutional vehicles have moved aggressively onto public networks:
+The tokenized RWA market has crossed [**$32.22 billion**](https://app.rwa.xyz) in on-chain value, anchored by [**$15.01 billion**](https://app.rwa.xyz/treasuries) in tokenized U.S. Treasuries. Institutional vehicles have moved aggressively onto public networks:
 
 | Asset | Issuer | AUM |
 |---|---|---|
-| BUIDL | BlackRock | $2.4B |
-| USDY | Ondo Finance | $2.16B |
-| USDM | Mountain Protocol | $1.1B |
+| [BUIDL](https://app.rwa.xyz/assets/buidl) | BlackRock | $2.35B |
+| [USDY](https://app.rwa.xyz/assets/usdy) | Ondo Finance | $2.16B |
+| [USYC](https://app.rwa.xyz/assets/usyc) | Hashnote | $3.1B |
 
 These assets generate real yield — Treasury dividends, stablecoin rebases, lending rate accrual. But the moment they are deployed into a Uniswap pool to build secondary market liquidity, that yield distribution mechanism breaks entirely. The Uniswap v4 `PoolManager` singleton has no awareness of external token rebases or dividend accrual schedules. Yield accumulates as idle, unassigned float inside the pool manager, collecting 0% compound velocity.
 

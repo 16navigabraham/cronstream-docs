@@ -23,7 +23,7 @@ When an LP removes or reduces a position, `afterRemoveLiquidity` fires and scale
 
 Yield enters the pool through two channels:
 
-- **Token rebases.** When USDY or USDM rebases, the `PoolManager`'s actual ERC-20 balance increases above its internally tracked reserves. This unaccounted delta is the rebase surplus.
+- **Token rebases and NAV accrual.** When USDY rebases or USYC accrues NAV, the `PoolManager`'s actual ERC-20 balance increases above its internally tracked reserves. This unaccounted delta is the rebase surplus.
 - **Swap fees.** Trading activity generates fee income that accumulates inside the pool's fee growth registers.
 
 The `afterSwap` and `afterDonate` callbacks measure the current pool token balance against the hook's internal ledger on each swap or donation event, tracking the growing surplus in real time.

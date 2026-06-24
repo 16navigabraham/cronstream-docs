@@ -56,6 +56,7 @@ Post-audit. Coordinated deployment across Base, Arbitrum One, and Unichain — i
 | Milestone | Description |
 |---|---|
 | Mainnet deployment | Simultaneous deployment to Base, Arbitrum One, and Unichain |
+| DevRel and integration tooling | Foundry deployment scripts and migration SDK for asset issuers transitioning liquidity from existing pools to Cronstream-enabled pools |
 | sUSDai/USDC pool | Permian Labs integration — first live Cronstream pool |
 | USDY/USDC pool | Ondo Finance integration |
 | USYC/USDC pool | Hashnote integration |
@@ -63,6 +64,8 @@ Post-audit. Coordinated deployment across Base, Arbitrum One, and Unichain — i
 | Reactive keeper production | Live `YieldReactiveKeeper.sol` handling autonomous distribution triggers across all whitelisted pools |
 
 Each asset issuer goes through an off-chain diligence process before their pool ID is added to the whitelist — token contract behavior, liquidity depth, rebase mechanism, and compliance posture are verified before `authorizePool()` is called.
+
+Because Uniswap v4 hook binding is immutable, asset issuers with existing pools must initialize a new pool and migrate liquidity. Cronstream's DevRel function handles this transition end-to-end — providing deployment scripts, migration tooling, and direct integration support so issuers do not need to read hook lifecycle documentation to get started.
 
 ## Phase 4 — Sponsored gas & maintenance operations
 

@@ -122,6 +122,10 @@ LPs deploy capital into the initialized pool via the Uniswap v4 `PositionManager
   The [cronstream.xyz](https://cronstream.xyz) frontend exists exclusively for the registry whitelisting step. It is an administrative interface for institutional asset issuers — not a consumer trading interface.
 </Callout>
 
+<Callout type="warning">
+  **Existing pools cannot be upgraded.** In Uniswap v4, a pool's hook address is set at initialization and is immutable. An asset issuer with an existing pool on a different hook (or no hook) must initialize a new pool with the Cronstream hook address and migrate their liquidity. Cronstream provides integration tooling and DevRel support to make this migration atomic and friction-free.
+</Callout>
+
 ## Yield ownership and security
 
 Yield in Cronstream cannot be diverted to an unauthorized address. The hook does not distribute yield to whoever calls `distributeYield()` or to whoever initialized the pool — it distributes exclusively to the addresses recorded in its LP ownership matrix.

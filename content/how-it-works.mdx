@@ -103,7 +103,7 @@ Asset issuers (Permian Labs, Ondo, BlackRock) do not interact with the hook dire
 
 ### Registry whitelisting
 
-The asset issuer submits their target `PoolKey` parameters via the [Cronstream registry](https://cronstream.xyz). The protocol administrator calls `authorizePool(PoolKey)` on the hook contract, storing the `poolId` hash in the `isAuthorizedPool` mapping.
+The asset issuer submits their target `PoolKey` parameters via the [Cronstream registry](https://cronstream.xyz). The Cronstream protocol admin (a multi-sig) reviews the submission and calls `authorizePool(PoolKey)` on the hook contract. This function is gated by `onlyOwner` - it cannot be called by the permissionless keeper or any external party. Once the transaction confirms, the `poolId` is stored in the `isAuthorizedPool` mapping and the pool is cleared for initialization.
 
 No further involvement is required from the issuer after this step.
 

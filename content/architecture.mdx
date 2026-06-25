@@ -61,6 +61,17 @@ function beforeInitialize(address, PoolKey calldata key, uint160)
 
 This limits Cronstream's operational scope to a curated registry of institutional-grade asset pools (BUIDL, USDY, USYC, sUSDai) and eliminates the griefing surface entirely. New pools are added by the administrator after off-chain diligence on token contract behavior and liquidity depth.
 
+### Role separation
+
+Two distinct roles operate Cronstream with no overlap:
+
+| Role | Actor | Function | Access control |
+|---|---|---|---|
+| **Protocol admin** | Cronstream multi-sig | `authorizePool()` - whitelists pool IDs before creation | `onlyOwner` |
+| **Keeper** | Node.js EOA / any caller | `distributeYield()` - triggers yield distribution on active pools | None - fully permissionless |
+
+The keeper cannot whitelist pools. The admin does not need to be online for distributions to run. A compromised keeper has zero ability to alter the pool registry or redirect yield - the worst outcome is a missed distribution that any other caller can fill.
+
 ## LP ownership matrix
 
 Because the `PoolManager` singleton does not maintain an enumerable registry of LP addresses, Cronstream builds and maintains its own:

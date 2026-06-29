@@ -3,4 +3,9 @@
 :root {
   --nextra-primary-hue: 168deg;
   --nextra-primary-saturation: 60%;
+  --nextra-bg: 250 250 250;
+}
+
+.dark {
+  --nextra-bg: 17 17 17;
 }

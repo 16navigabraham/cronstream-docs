@@ -60,7 +60,11 @@ export default async function RootLayout({ children }) {
               }
             />
           }
-          footer={<p>Cronstream Protocol · MIT License</p>}
+          footer={
+            <p style={{ fontSize: '0.875rem', opacity: 0.6, letterSpacing: '0.01em' }}>
+              Cronstream Protocol Lab · Institutional infrastructure for Web3
+            </p>
+          }
           feedback={{ content: null }}
           editLink={null}
         >

@@ -33,9 +33,10 @@ Post-cohort. Grant sourcing happens before testnet deployment to fund the audit 
 | Milestone | Description |
 |---|---|
 | Ecosystem grant applications | Uniswap Foundation Hook Grants, Arbitrum developer grants, Base Ecosystem Fund - non-dilutive capital targeting $50k+ for audit and deployment |
-| Multi-sig setup | Secure multi-signature admin layout for pool whitelist governance |
+| Governance setup | Transition admin key to Gnosis Safe multi-signature structure with founding team and lead investors as required signers for `authorizePool()` |
 | Testnet deployment | Hook deployed against Uniswap v4 on Base Sepolia, Arbitrum Sepolia, and Unichain testnet |
 | Mock RWA pool | USDY/USDC testnet pool with simulated rebase events and live keeper node |
+| Distribution history export | Event query tool that reads all `distributeYield()` and `YieldEscrowed` events for a given pool and exports a timestamped, LP-attributed CSV. Designed for operations teams to produce regulatory-ready audit reports without reading block explorers |
 | External security audit | Tier-1 firm audit (Spearbit or equivalent) covering flash accounting, transient storage reentrancy, LP matrix manipulation, keeper swap MEV exposure |
 
 <Callout type="warning">
@@ -94,7 +95,7 @@ Target issuers: Ondo Finance (USDY), Hashnote (USYC), BlackRock (BUIDL), Frankli
 
 The hook is the foundation, not the ceiling. Cronstream's long-term thesis is a non-custodial compliance and infrastructure layer for institutional players and hedge funds operating in Web3. The hook proves the architecture and builds the trust. The product suite that follows serves the operational and regulatory needs of the same institutions using the hook - without ever holding their funds.
 
-**Compliance tooling for institutions and hedge funds.** Institutional allocators and hedge funds face a consistent blocker entering DeFi: their legal and compliance teams cannot sign off on protocols that introduce custody risk or produce no audit trail. Cronstream's non-custodial architecture - where funds never leave the PoolManager and every distribution is an on-chain event - is the foundation for a broader compliance product suite. Tools in this direction include automated yield-attribution reports (proving exactly where every unit of rebase yield was routed and to whom), KYC/AML wallet screening before distribution, transaction monitoring dashboards for operations teams, and on-chain audit exports in formats compliance officers can hand directly to regulators. These tools do not hold funds - they provide the infrastructure layer that makes institutional Web3 participation operationally and legally viable.
+**Compliance tooling for institutions and hedge funds.** Institutional allocators and hedge funds face a consistent blocker entering DeFi: their legal and compliance teams cannot sign off on protocols that introduce custody risk or produce no audit trail. Cronstream's non-custodial architecture - where funds never leave the PoolManager and every distribution is an on-chain event - is the foundation for a broader compliance product suite. The distribution history export ships in Phase 2 as the first tool in this direction. Further tools include KYC/AML wallet screening before distribution, transaction monitoring dashboards for operations teams, and on-chain audit exports in formats compliance officers can hand directly to regulators. These tools do not hold funds - they provide the infrastructure layer that makes institutional Web3 participation operationally and legally viable.
 
 **Institutional Treasury Dashboard.** Asset issuers managing positions across Base, Arbitrum, and Unichain currently have no unified interface for monitoring yield accumulation, distribution history, and LP composition across their pools. A secure, non-custodial enterprise interface built on top of the free hook gives institutional operations teams cross-chain position views, real-time yield analytics, and compliance reporting in one place. This is the natural Product 2, built on the trust already established through the hook.
 

@@ -9,6 +9,38 @@ Answers to the questions institutional allocators, Uniswap Foundation evaluators
 
 ---
 
+**What does a compliance team need to evaluate Cronstream?**
+
+Compliance teams evaluating infrastructure protocols need answers to four questions before their legal team can classify the protocol and approve treasury interaction.
+
+**What is Cronstream legally?** Cronstream is a non-custodial smart contract hook deployed on Uniswap v4. It is infrastructure — it does not issue tokens, hold funds, or act as a counterparty. Cronstream's function is to detect yield surpluses that accumulate inside an existing Uniswap v4 pool and route them to the correct LP wallets automatically. At no point does the Cronstream hook hold principal LP funds.
+
+**What does Cronstream touch?** Only the yield surplus — the delta between the pool's actual token balance and its internally tracked reserves after a rebase event. This transient balance exists for the duration of a single transaction and is fully distributed before the transaction closes. LP principal remains inside the Uniswap v4 `PoolManager` at all times.
+
+**What is the audit status?** Cronstream will not deploy to mainnet before an external security audit from a tier-1 firm (Spearbit or equivalent) with a published report. The audit covers flash accounting correctness, reentrancy vectors, LP matrix manipulation, and keeper swap MEV exposure. No institutional capital should interact with the protocol before the report is public.
+
+**What is the governance structure?** Pool authorization is currently administered by the Cronstream Protocol Lab founding team during the development phase. Upon seed funding, governance transitions to a multi-signature structure requiring approval from the founding team and lead investors before any pool is whitelisted. Full governance details will be published alongside the audit report.
+
+Compliance teams requiring additional documentation, contract addresses for review, or direct technical discussion should contact [thecronstream@gmail.com](mailto:thecronstream@gmail.com).
+
+---
+
+**Will institutional players resist automated on-chain yield tracking?**
+
+The concern is inverted. Institutional compliance teams do not resist audit trails - they require them. Every distribution must be traceable: who received what, how much, when, and whether any transfer failed and why. Manual off-chain batch distributions via multi-sig produce none of this automatically and are what regulators in the US and EU have begun flagging as evidence of a centralized clearinghouse structure.
+
+Cronstream produces the opposite. Every `distributeYield()` call is an on-chain transaction - permanently timestamped, publicly verifiable, and attributable to a specific pool and LP set. Every failed KYC transfer generates an `YieldEscrowed` event with the recipient address and amount. Compliance officers can reconstruct the full distribution history from chain state alone, with no reliance on the protocol operator's internal records.
+
+The three friction points that are real for institutional onboarding are different:
+
+1. **Smart contract risk.** Unaudited code near institutional capital is a hard no regardless of architecture. An external audit from a tier-1 firm is a prerequisite before any institutional LP will engage. This is on the roadmap before mainnet.
+2. **Legal classification.** An institution's legal team needs to formally classify what Cronstream is before their treasury can interact with it. This takes time and is independent of the protocol's technical correctness.
+3. **Pool migration.** Uniswap v4 hook binding is immutable - an issuer with an existing pool must initialize a new pool and migrate liquidity. Cronstream provides migration tooling and DevRel support to reduce this friction, but the operational step exists.
+
+None of these are arguments against the protocol. They are the standard onboarding sequence for any infrastructure product entering institutional finance.
+
+---
+
 **Why push-yield distribution instead of auto-compounding?**
 
 Auto-compounding permanently redirects yield back into the pool, increasing LP position size but locking the value as illiquid reserves inside the `PoolManager`. For individual retail LPs, auto-compounding is convenient. For institutional LPs - corporate treasuries, yield funds, family offices - real-world operations require liquid cash flow. A fund that allocates $50M in USDY to a Uniswap pool has quarterly reporting obligations, redemption windows, and cash management requirements that cannot be satisfied by a continuously growing but illiquid position. Cronstream provides direct liquidity velocity: yield arrives in the LP's wallet and is immediately deployable.

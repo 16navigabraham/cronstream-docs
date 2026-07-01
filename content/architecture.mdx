@@ -67,10 +67,20 @@ Two distinct roles operate Cronstream with no overlap:
 
 | Role | Actor | Function | Access control |
 |---|---|---|---|
-| **Protocol admin** | Cronstream multi-sig | `authorizePool()` - whitelists pool IDs before creation | `onlyOwner` |
+| **Protocol admin** | Cronstream Protocol Lab founding team | `authorizePool()` - whitelists pool IDs before creation | `onlyOwner` |
 | **Keeper** | Node.js EOA / any caller | `distributeYield()` - triggers yield distribution on active pools | None - fully permissionless |
 
 The keeper cannot whitelist pools. The admin does not need to be online for distributions to run. A compromised keeper has zero ability to alter the pool registry or redirect yield - the worst outcome is a missed distribution that any other caller can fill.
+
+### Admin governance
+
+Pool authorization is currently administered by the Cronstream Protocol Lab founding team. This is appropriate for the current development and testnet phase — no institutional capital is at risk before mainnet, and mainnet deployment is gated behind a published external security audit.
+
+Governance structure, including multi-signature administration for `authorizePool()`, will be established as part of Phase 2 before any mainnet deployment or institutional capital onboarding. Upon seed funding, the admin key transitions to a Gnosis Safe requiring signatures from the founding team and lead investors before any pool is whitelisted.
+
+<Callout type="info">
+  No pool whitelist change is possible without the admin key. Institutional LPs interacting with a Cronstream pool can verify on-chain that the pool was explicitly authorized before the hook was bound — hook binding in Uniswap v4 is immutable and cannot be altered after pool initialization.
+</Callout>
 
 ## LP ownership matrix
 

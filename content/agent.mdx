@@ -1,0 +1,84 @@
+---
+title: Agent Node
+description: The autonomous verification agent — how it works, what it checks, and how to run it.
+---
+
+# Agent Node
+
+The agent is the off-chain brain of CronStream. It monitors active streams, verifies completed deliverables, and signs EIP-712 extension vouchers when all gates pass. It submits those vouchers on-chain autonomously — no human in the loop.
+
+The agent is intentionally rule-based, not AI. When a contractor's payroll is on the line, you want cryptographic certainty, not a language model's opinion.
+
+---
+
+## Verification Sources
+
+The agent supports four verification sources, configured per stream at creation time:
+
+| Source | What It Checks |
+|---|---|
+| **GitHub** | Code commits, pull request merges, CI/CD workflow results |
+| **Jira** | Issue status transitions (e.g. `In Progress → Done`) |
+| **Bitbucket** | Pull request merges and pipeline pass |
+| **Figma** | File version changes and frame updates |
+
+Only one source is required per stream. The company configures the source when creating the stream.
+
+---
+
+## GitHub — 3-Layer Gate
+
+GitHub verification runs three checks in sequence. All three must pass before the agent signs.
+
+**Gate 1 — Code Diff Filter**
+Ignores `.md` and `.txt` changes. Requires actual line additions inside `/src` or `/contracts` directories. Documentation-only pushes do not unlock payment.
+
+**Gate 2 — Pull Request Merge**
+Listens for `pull_request.merged == true`. A senior engineering review must have approved and merged the PR.
+
+**Gate 3 — CI/CD Pass**
+Requires `workflow_run.conclusion == "success"`. Tests must pass before pay flows.
+
+```
+commit pushed
+     ↓
+Gate 1: real code changes in /src or /contracts?  →  No: reject
+     ↓
+Gate 2: PR merged by a senior engineer?           →  No: reject
+     ↓
+Gate 3: CI/CD workflow passed?                    →  No: reject
+     ↓
+Agent signs EIP-712 voucher → submits on-chain
+```
+
+---
+
+## What Happens When Verification Fails
+
+If any gate fails, the agent does not sign. The stream expires naturally at `streamValidUntil`. The company then calls `reclaimUnearned()` to recover the full unearned deposit — no transaction needed from the agent, no human escalation.
+
+---
+
+## x402 Pay-Per-Call API
+
+The agent exposes a public REST API for AI agents and third-party integrations. Each call costs $0.01–$0.10 USDC via the x402 pay-per-call protocol.
+
+Useful for:
+- AI agents querying stream status programmatically
+- Third-party dashboards reading verification state
+- Automated tooling triggering manual re-verification
+
+---
+
+## Running Your Own Agent
+
+```bash
+git clone https://github.com/thecronstream/CronStream
+cd cronstream/agent-node
+cp .env.example .env
+# Set CONTRACT_ADDRESS, AGENT_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET, RPC_URL
+npm install
+npm start
+```
+
+The agent listens for on-chain `StreamCreated` events and automatically registers new streams for monitoring. No manual configuration needed after deployment.

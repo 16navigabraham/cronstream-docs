@@ -1,28 +1,53 @@
 ---
 title: Overview
-description: Cronstream Protocol Lab — open-source Uniswap v4 hook infrastructure.
+description: CronStream Protocol — milestone-gated token streaming for the programmable economy.
 ---
 
-# Cronstream Protocol Lab
+# CronStream Protocol
 
-**Open-source Uniswap v4 hook infrastructure. Built in public.**
+**Milestone-gated token streaming. Funds flow only when work is provably done.**
 
-Cronstream builds and ships v4 hooks that solve real liquidity problems — starting with reward aggregation and growing into a suite of open primitives.
+CronStream is an open-source protocol for B2B payment streaming on EVM chains. A company deposits the full engagement budget upfront — but the stream starts locked. The contractor earns nothing until an autonomous agent verifies a completed deliverable and cryptographically unlocks the next payment window.
 
----
-
-## Current Build: Reward Aggregator Hook
-
-Protocols spend millions on fragmented liquidity mining. LPs claim from ten different contracts. Neither side wins.
-
-Cronstream's Reward Aggregator hook lets multiple protocols stream incentives directly into a v4 pool. LPs earn from every source automatically — no separate staking, no manual claims. One pool, aggregated rewards, continuous settlement.
+If work stops, the agent stops signing. The stream freezes at expiry, and the company reclaims unearned funds. No human intervention. No emergency transaction.
 
 ---
 
-## Status
+## The Problem
 
-Active development — [Atrium Academy Uniswap Hook Incubator (UHI)](https://atrium.academy) cohort, 2026.
+Every Web3 streaming protocol today streams money based on time alone. Superfluid and LlamaPay were built for high-trust internal teams — DAO core contributors, token vesting, recurring salaries. In those environments, unconditional streaming is fine.
 
-Documentation will be updated as the protocol ships.
+B2B contracting is different. When a DAO in London hires a developer in Lagos, they need mathematical guarantees, not blind faith. If the contractor goes dark mid-stream, a time-based stream drains the treasury until a human notices. And as regulations tighten — IRS 1099-DA, MiCA — streaming money without a verifiable audit trail of why it moved creates compliance exposure.
 
-Follow progress on [X (@cronstream)](https://x.com/cronstream).
+CronStream adds a cryptographic circuit breaker: every dollar unlocked is tied to an on-chain event proving work was done.
+
+---
+
+## How It Differs
+
+| | Superfluid / LlamaPay | CronStream |
+|---|---|---|
+| Payment trigger | Time (unconditional) | Verified deliverable |
+| If contractor ghosts | Stream drains until cancelled | Stream freezes at expiry |
+| Audit trail | None | Every dollar tied to a signed on-chain event |
+| Unearned funds | Manual cancel required | `reclaimUnearned()` — trustless recovery |
+| Built for | Internal DAO teams, vesting | Remote contractors, cross-border B2B |
+
+---
+
+## Current Deployments
+
+| Network | Chain ID | Contract |
+|---|---|---|
+| Arbitrum Sepolia | 421614 | `0x5A141097BAF8D88f665217817A1f89e1663f0C16` |
+| Robinhood Testnet | 46630 | `0x12B1c71A60CBC3Fdd44D3D974546D2751feC04eD` |
+
+---
+
+## Open Source
+
+CronStream is fully open source. The contract, agent node, and frontend are all public — no operator dependency. Any protocol or company can deploy their own instance with their own agent signer.
+
+- **GitHub:** [github.com/thecronstream](https://github.com/thecronstream)
+- **X:** [@cronstream](https://x.com/cronstream)
+- **App:** [cronstream.xyz](https://cronstream.xyz)

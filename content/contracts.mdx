@@ -1,0 +1,117 @@
+---
+title: Smart Contracts
+description: Contract addresses, interface, and deployment details for CronStream v3.0.
+---
+
+# Smart Contracts
+
+## Deployments
+
+### v3.0 — Current
+
+| Network | Chain ID | Address |
+|---|---|---|
+| Arbitrum Sepolia | 421614 | `0x5A141097BAF8D88f665217817A1f89e1663f0C16` |
+| Robinhood Testnet | 46630 | `0x12B1c71A60CBC3Fdd44D3D974546D2751feC04eD` |
+
+**Mainnet:** Arbitrum One — post-audit target.
+
+---
+
+## Interface
+
+```solidity
+interface ICronStream {
+
+    // ── Create ────────────────────────────────────────────────────────────────
+
+    /// @notice Create a locked stream. Pass initialDurationSeconds = 0
+    ///         for locked start — contractor earns $0 until agent extends.
+    function createStream(
+        address recipient,
+        address token,
+        uint256 ratePerSecond,
+        uint256 initialDurationSeconds,
+        uint256 depositAmount
+    ) external returns (bytes32 streamId);
+
+    // ── Extend ────────────────────────────────────────────────────────────────
+
+    /// @notice Agent submits an EIP-712 signed voucher to unlock the next period.
+    ///         Works on both active (extends) and expired (reactivates) streams.
+    function extendStreamWindowWithSignature(
+        bytes32 streamId,
+        uint256 extensionDurationSeconds,
+        uint256 expiry,
+        bytes calldata signature
+    ) external;
+
+    // ── Withdraw ──────────────────────────────────────────────────────────────
+
+    /// @notice Contractor withdraws earned tokens. 0.5% protocol fee deducted.
+    function withdrawFromStream(bytes32 streamId, uint256 amount) external;
+
+    /// @notice Returns contractor's current withdrawable balance.
+    function balanceOf(bytes32 streamId) external view returns (uint256);
+
+    // ── Reclaim ───────────────────────────────────────────────────────────────
+
+    /// @notice Company reclaims unearned deposit after stream expires.
+    function reclaimUnearned(bytes32 streamId) external;
+
+    /// @notice Company cancels an active stream early; unearned funds returned.
+    function cancelStream(bytes32 streamId) external;
+}
+```
+
+---
+
+## Stream Struct
+
+```solidity
+struct Stream {
+    address sender;           // Company wallet funding the stream
+    address recipient;        // Contractor wallet
+    address token;            // ERC-20 — USDC, USDT, or any standard token
+    uint256 ratePerSecond;    // Token velocity per second
+    uint256 startTime;        // Creation block timestamp
+    uint256 streamValidUntil; // Hard expiry — stream freezes here
+    uint256 totalDeposited;   // Actual tokens received (post-fee-on-transfer)
+    uint256 totalWithdrawn;   // Cumulative contractor withdrawals
+    uint256 nonce;            // Per-stream EIP-712 replay counter
+    uint256 earnedSnapshot;   // Tokens earned across all closed windows
+    uint256 lastWindowStart;  // Timestamp when current window opened
+}
+```
+
+---
+
+## Test Coverage
+
+108 tests, 0 failures.
+
+| Metric | Coverage |
+|---|---|
+| Lines | 100% |
+| Statements | 98.57% |
+| Branches | 94.29% |
+| Functions | 100% |
+
+Test categories include: locked-start lifecycle, multi-period earnings, gap-time enforcement, cross-stream voucher attacks, self-sign rejection, key rotation, deposit exhaustion, fee routing, deflationary token support, and 11 fuzz suites.
+
+---
+
+## Deploy Your Own Instance
+
+```bash
+git clone https://github.com/thecronstream/CronStream
+cd cronstream/contracts
+cp .env.example .env
+# Set ADMIN_ADDRESS, AGENT_SIGNER_ADDRESS, FEE_RECIPIENT_ADDRESS
+forge script script/Deploy.s.sol \
+  --rpc-url $RPC_URL \
+  --private-key $PRIVATE_KEY \
+  --broadcast --verify
+```
+
+No operator dependency — you control the agent signer key and the fee recipient. CronStream Protocol Lab takes no cut from self-hosted deployments.

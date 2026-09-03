@@ -1,0 +1,92 @@
+---
+title: CronStreamHook
+description: Uniswap v4 hook for time-weighted USDC rewards — built during Atrium Academy UHI10.
+---
+
+# CronStreamHook
+
+CronStreamHook is a Uniswap v4 hook that applies CronStream's time-weighting principle to liquidity provision. LPs earn USDC rewards proportional to how long they keep their position active — not how much volume they generate.
+
+Built during the [Atrium Academy UHI10 Hookathon](https://atrium.academy) (2026). The idea comes from the "Streaming USDC Rewards for Liquidity Providers" concept in the Atrium Request for Hooks list, compiled from Circle's hook ideas.
+
+**Repo:** [github.com/thecronstream/cronstreamHook](https://github.com/thecronstream/cronstreamHook)
+
+---
+
+## How It Works
+
+The hook listens to two Uniswap v4 callbacks:
+
+| Callback | Role |
+|---|---|
+| `afterAddLiquidity` | Records position entry timestamp and liquidity. If position exists, accrues pending reward first before resetting clock. |
+| `afterRemoveLiquidity` | Computes time-weighted reward, adds to claimable balance, clears state on full exit. |
+
+**Reward formula:**
+
+```
+reward = (positionLiquidity × elapsed × rewardRatePerSecond) / totalPoolLiquidity
+```
+
+Rewards are pulled from an external Circle Wallet vault via `safeTransferFrom` when the LP calls `claimRewards()`. The hook holds no custody over LP funds at any point.
+
+---
+
+## JIT Protection
+
+Same-block add and remove earns zero reward — `elapsed = 0` returns early with no state change. JIT liquidity bots have no reward surface to exploit.
+
+---
+
+## Position Isolation
+
+Positions are keyed by `positionId = keccak256(sender, tickLower, tickUpper, salt)`, not by wallet address alone. The same LP can hold multiple positions with different salts in the same tick range — each tracked independently with its own entry time.
+
+---
+
+## Security Properties
+
+| Threat | Mitigation |
+|---|---|
+| JIT liquidity | `elapsed = 0` returns zero reward, no revert |
+| Divide by zero | Early return when `totalLiquidity = 0` |
+| Precision loss | Integer floor rounds to 0, never reverts or locks funds |
+| Position overwrite | Salt-keyed `positionId`, not address alone |
+| Unauthorized vault access | `setRewardVault` and `setRewardRate` are `onlyOwner` |
+
+---
+
+## Test Coverage
+
+12 tests, 0 failures.
+
+| Metric | Coverage |
+|---|---|
+| Lines | 100% |
+| Statements | 97.96% |
+| Branches | 85.71% |
+| Functions | 100% |
+
+---
+
+## Deploy Your Own Instance
+
+```bash
+git clone https://github.com/thecronstream/cronstreamHook
+cd cronstreamHook
+forge install
+forge build
+forge test -v
+```
+
+To deploy to Base Sepolia:
+
+```bash
+cp .env.example .env
+# Set PRIVATE_KEY and RPC_URL
+forge script script/DeployCronStream.s.sol \
+  --rpc-url $RPC_URL \
+  --broadcast --verify
+```
+
+Each deployment is an independent instance — you set your own `rewardVault` (any Circle Wallet or EOA that has approved the hook) and `rewardRatePerSecond`. No dependency on CronStream as an operator.

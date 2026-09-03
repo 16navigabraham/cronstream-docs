@@ -1,0 +1,108 @@
+---
+title: How It Works
+description: The locked-start stream model, period lifecycle, and EIP-712 voucher mechanism.
+---
+
+# How It Works
+
+## Locked-Start Stream Model
+
+Every CronStream stream is created locked. `streamValidUntil = startTime` — the stream is born expired. The contractor's withdrawable balance is `$0.00` until the agent acts.
+
+This is the core trust enforcement mechanism. A contractor cannot withdraw period 1 wages without the agent first verifying completed work.
+
+```
+CREATE STREAM (locked)
+     │  streamValidUntil = startTime  →  balance = $0
+     ▼
+Contractor completes the work
+     ▼
+Agent verifies → extendStreamWindowWithSignature()
+     │  streamValidUntil = now + windowDuration
+     │  Stream active — funds accrue per second
+     ▼
+Window elapses
+     ├── Agent verifies next period  →  repeat
+     └── Agent does not verify  →  stream freezes
+                                    company calls reclaimUnearned()
+```
+
+---
+
+## Period Lifecycle
+
+Each payment period follows the same sequence:
+
+1. **Locked** — stream created, balance zero, contractor works
+2. **Verified** — agent checks deliverables, signs an EIP-712 voucher, submits on-chain
+3. **Active** — window open, funds accrue in real time per second
+4. **Expired** — window closes, stream re-locks
+5. **Reclaim** — if agent never extends, company recovers full unearned deposit
+
+---
+
+## EIP-712 Extension Voucher
+
+The agent never submits work assessments directly. It signs a structured voucher off-chain and anyone can submit it on-chain — the contract verifies the signature.
+
+```
+ExtensionVoucher(
+    bytes32 streamId,
+    uint256 extensionDurationSeconds,
+    uint256 nonce,
+    uint256 expiry
+)
+```
+
+| Field | Purpose |
+|---|---|
+| `streamId` | Ties the voucher to one specific stream |
+| `nonce` | Per-stream counter — increments every extension, old signatures invalid |
+| `expiry` | Unix timestamp — stale vouchers time out |
+
+**Security properties:**
+
+| Attack | Defence |
+|---|---|
+| Replay a past voucher | `nonce` increments — old signature rejected |
+| Use a voucher weeks later | `expiry` timestamp — reverts if expired |
+| Contractor self-signs | Must recover to `agentSigner` address |
+| Cross-stream voucher | `streamId` in signed payload — mismatched ID rejected |
+| Stolen agent key | Admin calls `setAgentSigner(newKey)` — old key immediately invalid |
+| Cross-chain replay | Domain separator includes `chainId` and contract address |
+
+---
+
+## Gap-Time Protection
+
+Two fields on the `Stream` struct prevent the time between an expired window and a re-extension from being counted as earned:
+
+- `earnedSnapshot` — cumulative tokens earned across all closed windows
+- `lastWindowStart` — timestamp when the current window began
+
+When the agent extends an expired stream:
+
+```
+earnedSnapshot  += (streamValidUntil - lastWindowStart) × ratePerSecond
+lastWindowStart  = block.timestamp   ← resets to NOW, not old expiry
+streamValidUntil = block.timestamp + extensionDurationSeconds
+```
+
+Any gap between `streamValidUntil` and the re-extension timestamp contributes zero to earnings.
+
+---
+
+## Balance Formula
+
+```solidity
+function balanceOf(bytes32 streamId) external view returns (uint256) {
+    uint256 effectiveNow = block.timestamp < s.streamValidUntil
+                           ? block.timestamp : s.streamValidUntil;
+    uint256 windowEarned = (effectiveNow - s.lastWindowStart) * s.ratePerSecond;
+    uint256 totalEarned  = s.earnedSnapshot + windowEarned;
+    if (totalEarned > s.totalDeposited) totalEarned = s.totalDeposited;
+    return totalEarned - s.totalWithdrawn;
+}
+```
+
+The balance is always a pure view — no state writes, no gas cost to check.

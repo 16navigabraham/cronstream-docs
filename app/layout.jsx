@@ -7,17 +7,17 @@ export const metadata = {
     template: '%s – Cronstream Docs',
     default: 'Cronstream Docs',
   },
-  description: 'Cronstream Protocol — Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
+  description: 'CronStream Protocol — milestone-gated token streaming. Funds flow only when work is provably done.',
   metadataBase: new URL('https://docs.cronstream.xyz'),
   icons: {
     icon: '/favicon.png',
     shortcut: '/favicon.png',
     apple: '/favicon.png',
   },
-  keywords: ['Uniswap v4 hook', 'RWA yield distribution', 'rebasing stablecoin', 'USDY', 'USDM', 'BUIDL', 'liquidity provider yield', 'DeFi', 'Base', 'Arbitrum', 'Unichain'],
+  keywords: ['token streaming', 'milestone-gated payments', 'B2B payroll', 'Uniswap v4 hook', 'EIP-712', 'autonomous agent', 'DeFi', 'Arbitrum', 'open source'],
   openGraph: {
     title: 'Cronstream Docs',
-    description: 'Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
+    description: 'CronStream Protocol — milestone-gated token streaming. Funds flow only when work is provably done.',
     url: 'https://docs.cronstream.xyz',
     siteName: 'Cronstream Docs',
     type: 'website',
@@ -26,7 +26,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Cronstream Docs',
-    description: 'Uniswap v4 hook for automated yield distribution on RWA and rebasing stablecoin pools.',
+    description: 'CronStream Protocol — milestone-gated token streaming. Funds flow only when work is provably done.',
     images: ['https://docs.cronstream.xyz/banner.png'],
   },
 }
@@ -62,7 +62,7 @@ export default async function RootLayout({ children }) {
           }
           footer={
             <p style={{ fontSize: '0.875rem', opacity: 0.6, letterSpacing: '0.01em' }}>
-              Cronstream Protocol Lab · Institutional infrastructure for Web3
+              Cronstream Protocol Lab · Open-source milestone-gated streaming
             </p>
           }
           feedback={{ content: null }}
